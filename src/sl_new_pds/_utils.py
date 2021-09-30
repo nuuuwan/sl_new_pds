@@ -25,6 +25,11 @@ def get_mean_centroid(centroids):
     )
 
 
-def get_min_max_lat(lat_lng_list):
-    lats = list(map(lambda x: x[0], lat_lng_list))
-    return min(lats), max(lats)
+def get_bounds(lat_lng_list):
+    lats, lngs = list(
+        map(
+            lambda i: list(map(lambda x: x[i], lat_lng_list)),
+            [0, 1],
+        )
+    )
+    return list(map(lambda f: [f(lats), f(lngs)], [min, max]))
