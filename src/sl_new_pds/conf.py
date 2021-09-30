@@ -158,16 +158,21 @@ class Conf:
             )
             demo = {
                 '_total': 0,
+
+                # ethnic
                 'sinhala': 0,
                 'tamil_all': 0,
                 'muslim_malay': 0,
+
+                # religion
                 'buddhist': 0,
                 'hindu': 0,
                 'islam': 0,
                 'roman_catholic': 0,
                 'other_christian': 0,
                 'all_christian': 0,
-                'sinhala_buddhist': 0,
+
+                # sinhala_buddhist
                 'sinhala_buddhist': 0,
                 'non_sinhala_buddhist': 0,
             }
@@ -457,7 +462,7 @@ if __name__ == '__main__':
     TOTAL_SEATS = 160
     district_to_confs = Conf.get_district_to_confs(TOTAL_SEATS)
 
-    for district_id, conf in list(district_to_confs.items())[8:9]:
+    for district_id, conf in list(district_to_confs.items())[3:4]:
         _utils.print_json(conf.get_label_to_demo())
         for i in range(0, 100):
             print('-' * 64)
