@@ -10,3 +10,4 @@
   *  [2021-09-30 09:22AM] Updated README
   *  [2021-09-30 09:58AM] Implemented Basic Config + Fairness
   *  [2021-09-30 09:58AM] Updated README
+  *  [2021-09-30 12:05PM] basic splitting algorithm complete
