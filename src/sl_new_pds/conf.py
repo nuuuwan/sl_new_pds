@@ -2,7 +2,7 @@ import json
 import math
 import time
 
-from gig import ent_types, ents
+from gig import ent_types, ents, ext_data
 from gig.ent_types import ENTITY_TYPE
 from utils import dt, jsonx
 
@@ -12,6 +12,17 @@ PARENT_TO_CHILD_TYPE = {
     ENTITY_TYPE.DISTRICT: ENTITY_TYPE.DSD,
     ENTITY_TYPE.DSD: ENTITY_TYPE.GND,
 }
+
+
+def remove_zeros(_dict):
+    return dict(
+        list(
+            filter(
+                lambda x: x[1] > 0,
+                _dict.items(),
+            )
+        )
+    )
 
 
 def sort_and_print_dict(_dict):
@@ -33,7 +44,7 @@ def get_total_pop(label_to_pop):
 
 
 def get_label(old_label, region_ids):
-    if len(region_ids) > 3:
+    if len(region_ids) > 4:
         return old_label
 
     region_ents = list(
@@ -136,6 +147,96 @@ class Conf:
             label_to_pop = self.get_label_to_pop()
         return allocate_seats(self.__total_seats__, label_to_pop)
 
+    def get_label_to_demo(self):
+        label_to_demo = {}
+        for label, region_ids in self.__label_to_region_ids__.items():
+            ethnic_index = ext_data.get_table_data(
+                'census', 'ethnicity_of_population', region_ids
+            )
+            religious_index = ext_data.get_table_data(
+                'census', 'religious_affiliation_of_population', region_ids
+            )
+            demo = {
+                '_total': 0,
+                'sinhala': 0,
+                'tamil_all': 0,
+                'muslim_malay': 0,
+                'buddhist': 0,
+                'hindu': 0,
+                'islam': 0,
+                'roman_catholic': 0,
+                'other_christian': 0,
+                'all_christian': 0,
+                'sinhala_buddhist': 0,
+                'sinhala_buddhist': 0,
+                'non_sinhala_buddhist': 0,
+            }
+            for region_id in region_ids:
+                religion_demo = religious_index[region_id]
+                ethnic_demo = ethnic_index[region_id]
+
+                demo['_total'] += ethnic_demo['total_population']
+
+                demo['sinhala'] += ethnic_demo['sinhalese']
+                demo['tamil_all'] += (
+                    ethnic_demo['sri_lankan_tamil']
+                    + ethnic_demo['indian_tamil']
+                )
+                demo['muslim_malay'] += (
+                    ethnic_demo['moor'] + ethnic_demo['malay']
+                )
+
+                demo['buddhist'] += religion_demo['buddhist']
+                demo['hindu'] += religion_demo['hindu']
+                demo['islam'] += religion_demo['islam']
+                demo['roman_catholic'] += religion_demo['roman_catholic']
+                demo['other_christian'] += religion_demo['other_christian']
+
+                demo['all_christian'] = (
+                    demo['roman_catholic'] + religion_demo['other_christian']
+                )
+
+                demo['sinhala_buddhist'] = demo['buddhist']
+                demo['non_sinhala_buddhist'] = (
+                    demo['_total'] - demo['buddhist']
+                )
+
+            label_to_demo[label] = demo
+        return label_to_demo
+
+    def get_l2g2d2s(self):
+        label_to_demo = self.get_label_to_demo()
+        label_to_seats = self.get_label_to_seats()
+
+        groups_map = {
+            'ethnic': ['sinhala', 'tamil_all', 'muslim_malay'],
+            'religious': ['buddhist', 'hindu', 'islam', 'all_christian'],
+            'sinhala_buddhist': ['sinhala_buddhist', 'non_sinhala_buddhist'],
+        }
+        l2g2d2s = {}
+        for group, groups in groups_map.items():
+            l2g2d2s[group] = {}
+            total_demo_to_seats = {}
+            for label, seats in label_to_seats.items():
+                demo = label_to_demo[label]
+                label_to_pop0 = dict(
+                    list(
+                        map(
+                            lambda group: [group, demo[group]],
+                            groups,
+                        )
+                    )
+                )
+                l2g2d2s[group][label] = remove_zeros(
+                    allocate_seats(seats, label_to_pop0)
+                )
+                for demo, seats in l2g2d2s[group][label].items():
+                    if demo not in total_demo_to_seats:
+                        total_demo_to_seats[demo] = 0
+                    total_demo_to_seats[demo] += seats
+            l2g2d2s[group]['_total'] = total_demo_to_seats
+        return l2g2d2s
+
     def get_unfairness(self):
         label_to_pop = self.get_label_to_pop()
         total_pop = get_total_pop(label_to_pop)
@@ -189,7 +290,6 @@ class Conf:
     def get_target_pop_per_seat(self):
         total_pop = get_total_pop(self.get_label_to_pop())
         return total_pop / self.__total_seats__
-
 
     def copy(self):
         return Conf(_utils.dumb_copy(self.__label_to_region_ids__))
@@ -357,20 +457,21 @@ if __name__ == '__main__':
     TOTAL_SEATS = 160
     district_to_confs = Conf.get_district_to_confs(TOTAL_SEATS)
 
-    for district_id, conf in list(district_to_confs.items())[:2]:
+    for district_id, conf in list(district_to_confs.items())[8:9]:
+        _utils.print_json(conf.get_label_to_demo())
         for i in range(0, 100):
-            conf_file = f'/tmp/sl_new_pds.{district_id}.json'
-            jsonx.write(conf_file, conf.__label_to_region_ids__)
-            if conf.get_single_member_count() == conf.__total_seats__:
-                break
-
             print('-' * 64)
             print('%d)' % (i + 1))
             print('-' * 64)
 
-            t = time.time()
-            conf1 = conf.mutate_split_max_region()
-            print('t = %dms' % ((time.time() - t) * 1_000))
-            conf1.print_stats()
+            conf.print_stats()
+            _utils.print_json(conf.get_l2g2d2s())
+            conf_file = f'/tmp/sl_new_pds.{district_id}.json'
+            jsonx.write(conf_file, conf.__label_to_region_ids__)
 
-            conf = conf1
+            if conf.get_single_member_count() == conf.__total_seats__:
+                break
+
+            t = time.time()
+            conf = conf.mutate_split_max_region()
+            print('t = %dms' % ((time.time() - t) * 1_000))
