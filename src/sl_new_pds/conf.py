@@ -158,12 +158,10 @@ class Conf:
             )
             demo = {
                 '_total': 0,
-
                 # ethnic
                 'sinhala': 0,
                 'tamil_all': 0,
                 'muslim_malay': 0,
-
                 # religion
                 'buddhist': 0,
                 'hindu': 0,
@@ -171,7 +169,6 @@ class Conf:
                 'roman_catholic': 0,
                 'other_christian': 0,
                 'all_christian': 0,
-
                 # sinhala_buddhist
                 'sinhala_buddhist': 0,
                 'non_sinhala_buddhist': 0,
@@ -308,7 +305,7 @@ class Conf:
         ][0]
         max_label_pop = label_to_pop[max_label]
         max_label_seats_r = self.__total_seats__ * max_label_pop / total_pop
-        if max_label_seats_r >= 2:
+        if max_label_seats_r >= 3:
             target_cand_pop = (
                 (int)(max_label_seats_r / 2 + 0.5)
                 * max_label_pop
@@ -390,7 +387,7 @@ class Conf:
         max_north_label = None
         max_south_label = None
         for i in [0, 1]:
-            for p in [i / 10 for i in range(0, 11)]:
+            for p in [i / 10 for i in range(0, 10 + 1)]:
                 north_label = ['NORTH', 'EAST'][i]
                 south_label = ['SOUTH', 'WEST'][i]
 
@@ -416,18 +413,6 @@ class Conf:
                     max_south_region_ids = south_region_ids
                     max_north_label = north_label
                     max_south_label = south_label
-                    # print(
-                    #     dict(
-                    #         north_label=north_label,
-                    #         south_label=south_label,
-                    #         p=p,
-                    #         north_pop=north_pop,
-                    #         south_pop=south_pop,
-                    #         cand_pop=cand_pop,
-                    #         target_cand_pop=target_cand_pop,
-                    #         cand_pop_div=cand_pop_div,
-                    #     )
-                    # )
 
         del new_label_to_region_ids[max_label]
         new_label_to_region_ids[
@@ -462,7 +447,7 @@ if __name__ == '__main__':
     TOTAL_SEATS = 160
     district_to_confs = Conf.get_district_to_confs(TOTAL_SEATS)
 
-    for district_id, conf in list(district_to_confs.items())[3:4]:
+    for district_id, conf in list(district_to_confs.items())[15:16]:
         _utils.print_json(conf.get_label_to_demo())
         for i in range(0, 100):
             print('-' * 64)
@@ -480,3 +465,4 @@ if __name__ == '__main__':
             t = time.time()
             conf = conf.mutate_split_max_region()
             print('t = %dms' % ((time.time() - t) * 1_000))
+        _utils.print_json(conf.get_label_to_demo())
