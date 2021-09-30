@@ -456,7 +456,7 @@ if __name__ == '__main__':
     TOTAL_SEATS = 160
     district_to_confs = Conf.get_district_to_confs(TOTAL_SEATS)
 
-    for district_id, conf in list(district_to_confs.items())[2:3]:
+    for district_id, conf in list(district_to_confs.items())[1:2]:
         _utils.print_json(conf.get_label_to_demo())
         for i in range(0, 100):
             print('-' * 64)
