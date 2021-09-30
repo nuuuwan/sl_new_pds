@@ -26,6 +26,10 @@ def get_mean_centroid(centroids):
 
 
 def get_bounds(lat_lng_list):
+    lat_lng_list = list(filter(
+        lambda x: str(x),
+        lat_lng_list,
+    ))
     lats, lngs = list(
         map(
             lambda i: list(map(lambda x: x[i], lat_lng_list)),

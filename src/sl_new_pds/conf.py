@@ -8,10 +8,18 @@ from utils import dt, jsonx
 
 from sl_new_pds import _utils
 
+# PARENT_TO_CHILD_TYPE = {
+#     ENTITY_TYPE.DISTRICT: ENTITY_TYPE.DSD,
+#     ENTITY_TYPE.DSD: ENTITY_TYPE.GND,
+# }
+
 PARENT_TO_CHILD_TYPE = {
-    ENTITY_TYPE.DISTRICT: ENTITY_TYPE.DSD,
-    ENTITY_TYPE.DSD: ENTITY_TYPE.GND,
+    ENTITY_TYPE.ED: ENTITY_TYPE.PD,
+    ENTITY_TYPE.PD: ENTITY_TYPE.GND,
 }
+
+
+START_TYPE = list(PARENT_TO_CHILD_TYPE.keys())[0]
 
 
 def remove_zeros(_dict):
@@ -102,12 +110,12 @@ class Conf:
 
     @staticmethod
     def get_district_to_confs(total_seats):
-        district_ents = ents.get_entities(ENTITY_TYPE.DISTRICT)
+        district_ents = ents.get_entities(START_TYPE)
         label_to_region_ids = dict(
             list(
                 map(
                     lambda ent: (
-                        'district-' + dt.to_kebab(ent['name']),
+                        START_TYPE + '-' + dt.to_kebab(ent['name']),
                         [ent['id']],
                     ),
                     district_ents,
@@ -349,12 +357,13 @@ class Conf:
             for max_label_region_id in max_label_region_ids:
                 max_label_type = ent_types.get_entity_type(max_label_region_id)
                 child_type = PARENT_TO_CHILD_TYPE[max_label_type]
+                parent_id_key = max_label_type + '_id'
                 new_max_label_region_ids0 = list(
                     map(
                         lambda ent: ent['id'],
                         list(
                             filter(
-                                lambda ent: max_label_region_id in ent['id'],
+                                lambda ent: max_label_region_id == ent[parent_id_key] and ent['centroid'],
                                 ents.get_entities(child_type),
                             )
                         ),
@@ -435,9 +444,9 @@ class Conf:
         sort_and_print_dict(self.get_label_to_seats())
 
         print('unfairness:\t%f' % self.get_unfairness())
-        print('multi-member:\t%d' % self.get_multi_member_count())
-        print('single-member:\t%d' % self.get_single_member_count())
-        print('zero-member:\t%d' % self.get_zero_member_count())
+        # print('multi-member:\t%d' % self.get_multi_member_count())
+        # print('single-member:\t%d' % self.get_single_member_count())
+        # print('zero-member:\t%d' % self.get_zero_member_count())
         print('target pop-per-seat:\t %4.0f' % self.get_target_pop_per_seat())
 
         print('-' * 64)
@@ -447,7 +456,7 @@ if __name__ == '__main__':
     TOTAL_SEATS = 160
     district_to_confs = Conf.get_district_to_confs(TOTAL_SEATS)
 
-    for district_id, conf in list(district_to_confs.items())[15:16]:
+    for district_id, conf in list(district_to_confs.items())[2:3]:
         _utils.print_json(conf.get_label_to_demo())
         for i in range(0, 100):
             print('-' * 64)
