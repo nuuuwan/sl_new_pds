@@ -357,7 +357,7 @@ if __name__ == '__main__':
     TOTAL_SEATS = 160
     district_to_confs = Conf.get_district_to_confs(TOTAL_SEATS)
 
-    for district_id, conf in list(district_to_confs.items())[:1]:
+    for district_id, conf in list(district_to_confs.items())[:2]:
         for i in range(0, 100):
             conf_file = f'/tmp/sl_new_pds.{district_id}.json'
             jsonx.write(conf_file, conf.__label_to_region_ids__)
