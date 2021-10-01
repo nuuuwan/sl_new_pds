@@ -1,14 +1,14 @@
+import colorsys
+import math
 import os
 import random
-import math
-import colorsys
 
+import geopandas as gpd
 import matplotlib.pyplot as plt
-
+import pandas as pd
 from geo import geodata
 from gig import ent_types
-from utils import dt, timex
-from utils.cache import cache
+from utils import dt
 
 from sl_new_pds._constants import IDEAL_POP_PER_SEAT
 from sl_new_pds._utils import log
@@ -20,7 +20,7 @@ def get_random_color():
     return [random.random() * 0.5 + 0.5 for _ in range(0, 3)]
 
 
-@cache('sl_new_pds', timex.SECONDS_IN.YEAR)
+# @cache('sl_new_pds', timex.SECONDS_IN.YEAR)
 def get_label_color(label):
     if label not in LABEL_TO_COLOR:
         LABEL_TO_COLOR[label] = get_random_color()
@@ -29,18 +29,14 @@ def get_label_color(label):
 
 def get_pop_color(pop):
     p_pop = pop / IDEAL_POP_PER_SEAT
-    p_pop = max(min(p_pop, 2), 0.5)
-    log_p_pop = math.log(p_pop) / math.log(2)
+    LIMIT_P = 3
+    p_pop = max(min(p_pop, LIMIT_P), 1.0 / LIMIT_P)
+    log_p_pop = math.log(p_pop) / math.log(LIMIT_P)
 
-    h = (0 if log_p_pop > 0 else 120) / 360
-    abs_log_p_pop = abs(log_p_pop)
-
-    l = (100 - 50 * abs_log_p_pop) / 100
-    s = 100 / 100
-    print(h, l, s)
-    r, g, b = colorsys.hls_to_rgb(h, l, s)
-    print(r, g, b)
-
+    h = 0 if (log_p_pop > 0) else 120
+    lightness = 1 - 0.5 * abs(log_p_pop)
+    s = 1.0
+    r, g, b = colorsys.hls_to_rgb(h, lightness, s)
     return r, g, b
 
 
@@ -50,38 +46,50 @@ def draw_map(
     fig, ax = plt.subplots(figsize=(32, 18))
 
     for label, region_ids in label_to_region_ids.items():
-        gpd_df = None
+        gpd_df_list = []
         for region_id in region_ids:
             region_type = ent_types.get_entity_type(region_id)
-            new_gpd_df = geodata.get_region_geodata(region_id, region_type)
-            if gpd_df is None:
-                gpd_df = new_gpd_df
-            else:
-                gpd_df = gpd_df.append(new_gpd_df)
+            gpd_df = geodata.get_region_geodata(region_id, region_type)
+            gpd_df_list.append(gpd_df.explode()['geometry'])
+
+        gpd_df = gpd.GeoSeries(pd.concat(gpd_df_list).unary_union)
+
+        from shapely.geometry import JOIN_STYLE
+
+        eps = 0.0001
+        gpd_df = gpd_df.buffer(eps, 1, join_style=JOIN_STYLE.mitre).buffer(
+            -eps, 1, join_style=JOIN_STYLE.mitre
+        )
 
         xy = [
-            sum(gpd_df.centroid.x.tolist()) / len(region_ids),
-            sum(gpd_df.centroid.y.tolist()) / len(region_ids),
+            gpd_df.centroid.x.tolist()[0],
+            gpd_df.centroid.y.tolist()[0],
         ]
 
         label_final = label
-        color = (0.5, 0.5, 0.5)
+        color = get_label_color(label)
         if label_to_seats:
             seats = label_to_seats.get(label)
             label_final += f' ({seats})'
 
             if label_to_pop:
-                pop = label_to_pop.get(label) / seats
-                color = get_pop_color(pop)
-                print(pop, color)
-                pop_k = pop / 1_000
-                label_final += f' - {pop_k:.3g}K'
+                pop = label_to_pop.get(label)
+                color = get_pop_color(pop / seats)
+                if pop > 1_000_000:
+                    pop_m = pop / 1_000_000
+                    label_final += f' - {pop_m:.3g}M'
+                elif pop > 1_000:
+                    pop_k = pop / 1_000
+                    label_final += f' - {pop_k:.3g}K'
+                else:
+                    label_final += f' - {pop:.3g}'
 
-        gpd_df.plot(ax=ax, color=color)
-
+        gpd_df.plot(ax=ax, color=color, edgecolor="black", linewidth=1)
         ax.annotate(
             label_final, xy=(xy), horizontalalignment='center', size=12
         )
+
+    ax.legend(loc='lower right', fontsize=15, frameon=True)
 
     map_name_str = dt.to_kebab(map_name)
     image_file = f'/tmp/sl_new_pds.map.{map_name_str}.png'
@@ -94,11 +102,11 @@ def draw_map(
 if __name__ == '__main__':
     label_to_region_ids = {
         'Colombo': [
-            'LK-1103',
             'LK-1127',
+            'LK-1103',
         ],
-        # 'Gampaha': [
-        #     'LK-12',
-        # ],
+        'Gampaha': [
+            'LK-12',
+        ],
     }
     draw_map('New Electoral Districts', label_to_region_ids)

@@ -42,7 +42,7 @@ def mutate_split_max_region(conf):
     if len(max_label_region_ids) == 1:
         do_expand = True
 
-    elif len(max_label_region_ids) <= 3:
+    elif len(max_label_region_ids) <= 3.5:
         pops = list(
             map(
                 lambda region_id: (int)(
@@ -56,6 +56,9 @@ def mutate_split_max_region(conf):
         print(max_label_region_ids, cand_pop, min_seats_r)
         if min_seats_r < 0.95:
             do_expand = True
+
+    if max_label_region_ids[0] != 'EC-01':
+        do_expand = False
 
     if do_expand:
         new_max_label_region_ids = []
@@ -101,43 +104,49 @@ def mutate_split_max_region(conf):
     max_north_label = None
     max_south_label = None
 
-    if (bounds[1][0] - bounds[0][0]) > (bounds[1][1] - bounds[0][1]):
-        i = 0
+    span_0 = bounds[1][0] - bounds[0][0]
+    span_1 = bounds[1][1] - bounds[0][1]
+
+    if span_0 > 3 * span_1:
+        i_list = [0]
+    elif span_1 > 3 * span_0:
+        i_list = [1]
     else:
-        i = 1
+        i_list = [0, 1]
 
     N_P = 40
-    prev_cand_pop_div = None
-    for p in [i_p / N_P for i_p in range(0, N_P + 1)]:
-        north_label = ['NORTH', 'EAST'][i]
-        south_label = ['SOUTH', 'WEST'][i]
+    for i in i_list:
+        prev_cand_pop_div = None
+        for p in [i_p / N_P for i_p in range(0, N_P + 1)]:
+            north_label = ['NORTH', 'EAST'][i]
+            south_label = ['SOUTH', 'WEST'][i]
 
-        north_region_ids = []
-        south_region_ids = []
-        north_pop = 0
-        south_pop = 0
-        min_bound, max_bound = bounds[0][i], bounds[1][i]
-        for region_id, centroid, pop in zip(
-            new_max_label_region_ids, centroids, pops
-        ):
-            if centroid[i] > (min_bound + (max_bound - min_bound) * p):
-                north_region_ids.append(region_id)
-                north_pop += pop
-            else:
-                south_region_ids.append(region_id)
-                south_pop += pop
-        cand_pop = north_pop
-        cand_pop_div = abs(cand_pop - target_cand_pop)
-        if not min_cand_pop_div or min_cand_pop_div > cand_pop_div:
-            min_cand_pop_div = cand_pop_div
-            max_north_region_ids = north_region_ids
-            max_south_region_ids = south_region_ids
-            max_north_label = north_label
-            max_south_label = south_label
-        if prev_cand_pop_div and prev_cand_pop_div < cand_pop_div:
-            break
+            north_region_ids = []
+            south_region_ids = []
+            north_pop = 0
+            south_pop = 0
+            min_bound, max_bound = bounds[0][i], bounds[1][i]
+            for region_id, centroid, pop in zip(
+                new_max_label_region_ids, centroids, pops
+            ):
+                if centroid[i] > (min_bound + (max_bound - min_bound) * p):
+                    north_region_ids.append(region_id)
+                    north_pop += pop
+                else:
+                    south_region_ids.append(region_id)
+                    south_pop += pop
+            cand_pop = north_pop
+            cand_pop_div = abs(cand_pop - target_cand_pop)
+            if not min_cand_pop_div or min_cand_pop_div > cand_pop_div:
+                min_cand_pop_div = cand_pop_div
+                max_north_region_ids = north_region_ids
+                max_south_region_ids = south_region_ids
+                max_north_label = north_label
+                max_south_label = south_label
+            if prev_cand_pop_div and prev_cand_pop_div < cand_pop_div:
+                break
 
-        prev_cand_pop_div = cand_pop_div
+            prev_cand_pop_div = cand_pop_div
 
     del new_label_to_region_ids[max_label]
     new_label_to_region_ids[
@@ -202,5 +211,5 @@ def mutate_until_only_simple_member(conf, district_id):
 if __name__ == '__main__':
     district_to_confs = Conf.get_district_to_confs(TOTAL_SEATS_SL)
 
-    for district_id, conf in list(district_to_confs.items())[14:15]:
+    for district_id, conf in list(district_to_confs.items())[0:1]:
         mutate_until_only_simple_member(conf, district_id)

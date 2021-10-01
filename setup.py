@@ -27,7 +27,7 @@ setuptools.setup(
     python_requires='>=3.6',
     install_requires=[
         'bs4',
-        'pytest',
+        'pygeos',
         'selenium',
         'tweepy',
         'utils-nuuuwan',
