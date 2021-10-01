@@ -1,6 +1,6 @@
 from gig import ent_types, ents
 
-from sl_new_pds import _utils, region_utils
+from sl_new_pds import _utils, mapx, region_utils
 from sl_new_pds._constants import PARENT_TO_CHILD_TYPE
 from sl_new_pds._utils import log_time
 from sl_new_pds.conf import Conf
@@ -152,8 +152,10 @@ def mutate_split_max_region(conf):
 
 def mutate_until_only_simple_member(conf, district_id):
     _utils.print_json(conf.get_label_to_demo())
-    MAX_INTERATIONS = 100
+    MAX_INTERATIONS = 10
     for i in range(0, MAX_INTERATIONS):
+
+        map_name = f'{district_id}-{i}'
 
         @log_time
         def inner(conf=conf):
@@ -162,6 +164,11 @@ def mutate_until_only_simple_member(conf, district_id):
             print('-' * 64)
             print(f'{i}) {p_single_member_count:.0%} complete...')
             print('-' * 64)
+
+            conf_file = f'/tmp/sl_new_pds.{map_name}.json'
+            Conf.write(conf_file, conf)
+            mapx.draw_map(map_name, conf.get_label_to_region_ids())
+
             if single_member_count == conf.__total_seats__:
                 True, conf
             return False, mutate_split_max_region(conf)
@@ -173,7 +180,8 @@ def mutate_until_only_simple_member(conf, district_id):
     _utils.print_obj(conf.get_label_to_demo())
     conf.print_stats()
     _utils.print_obj(conf.get_l2g2d2s())
-    conf_file = f'/tmp/sl_new_pds.{district_id}.json'
+    map_name = f'{district_id}-{i}'
+    conf_file = f'/tmp/sl_new_pds.{map_name}.json'
     Conf.write(conf_file, conf)
 
 

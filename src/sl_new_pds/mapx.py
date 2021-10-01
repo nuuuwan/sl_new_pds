@@ -1,3 +1,4 @@
+import os
 import random
 
 import matplotlib.pyplot as plt
@@ -38,6 +39,8 @@ def draw_map(map_name, label_to_region_ids):
     image_file = f'/tmp/sl_new_pds.map.{map_name_str}.png'
     plt.savefig(image_file)
     log.info(f'Wrote map to {image_file}')
+    os.system(f'open -a firefox {image_file}')
+    return image_file
 
 
 if __name__ == '__main__':
