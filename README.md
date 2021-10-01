@@ -30,3 +30,5 @@
   *  [2021-10-01 08:37AM] Pre-Merge
   *  [2021-10-01 08:40AM] 
   *  [2021-10-01 08:41AM] Misc
+* [2021-10-01 08:41AM] Implement Map Visual
+  *  [2021-10-01 08:41AM] Updated README
