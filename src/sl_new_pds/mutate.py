@@ -171,10 +171,11 @@ def mutate_until_only_simple_member(conf, district_id):
                 map_name,
                 conf.get_label_to_region_ids(),
                 conf.get_label_to_seats(),
+                conf.get_label_to_pop(),
             )
 
             if single_member_count == conf.__total_seats__:
-                True, conf
+                return True, conf
             return False, mutate_split_max_region(conf)
 
         is_complete, conf = inner(conf)
@@ -184,14 +185,18 @@ def mutate_until_only_simple_member(conf, district_id):
     _utils.print_obj(conf.get_label_to_demo())
     conf.print_stats()
     _utils.print_obj(conf.get_l2g2d2s())
-    map_name = f'{district_id}-{i}'
+    map_name = f'{district_id}-FINAL'
     conf_file = f'/tmp/sl_new_pds.{map_name}.json'
     Conf.write(conf_file, conf)
+    mapx.draw_map(
+        map_name,
+        conf.get_label_to_region_ids(),
+    )
 
 
 if __name__ == '__main__':
     TOTAL_SEATS = 160
     district_to_confs = Conf.get_district_to_confs(TOTAL_SEATS)
 
-    for district_id, conf in list(district_to_confs.items())[0:1]:
+    for district_id, conf in list(district_to_confs.items())[2:3]:
         mutate_until_only_simple_member(conf, district_id)

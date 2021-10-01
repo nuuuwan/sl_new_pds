@@ -13,7 +13,7 @@ LABEL_TO_COLOR = {}
 
 
 def get_random_color():
-    return [random.random() for _ in range(0, 3)]
+    return [random.random() * 0.5 + 0.5 for _ in range(0, 3)]
 
 
 @cache('sl_new_pds', timex.SECONDS_IN.YEAR)
@@ -23,7 +23,9 @@ def get_color(label):
     return LABEL_TO_COLOR[label]
 
 
-def draw_map(map_name, label_to_region_ids, label_to_seats=None):
+def draw_map(
+    map_name, label_to_region_ids, label_to_seats=None, label_to_pop=None
+):
     fig, ax = plt.subplots(figsize=(32, 18))
 
     for label, region_ids in label_to_region_ids.items():
@@ -45,6 +47,10 @@ def draw_map(map_name, label_to_region_ids, label_to_seats=None):
         if label_to_seats:
             seats = label_to_seats.get(label)
             label_final += f' ({seats})'
+        if label_to_pop:
+            pop = label_to_pop.get(label)
+            pop_k = pop / 1_000
+            label_final += f' - {pop_k:.3g}K'
 
         ax.annotate(
             label_final, xy=(xy), horizontalalignment='center', size=12
