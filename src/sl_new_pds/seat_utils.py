@@ -1,3 +1,8 @@
+from utils import timex
+from utils.cache import cache
+
+
+@cache('sl_new_pds', timex.SECONDS_IN.DAY)
 def allocate_seats(total_seats, label_to_pop):
     total_pop = sum(label_to_pop.values())
     label_to_seats = {}

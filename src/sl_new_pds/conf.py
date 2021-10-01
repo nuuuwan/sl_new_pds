@@ -247,14 +247,14 @@ class Conf:
 
     @log_time
     def print_stats(self):
-        # _utils.print_json(self.__label_to_region_ids__)
+        _utils.print_json(self.__label_to_region_ids__)
         _utils.print_kv_dict(self.get_label_to_pop())
         _utils.print_kv_dict(self.get_label_to_seats())
 
         print('unfairness:\t%f' % self.get_unfairness())
-        # print('multi-member:\t%d' % self.get_multi_member_count())
-        # print('single-member:\t%d' % self.get_single_member_count())
-        # print('zero-member:\t%d' % self.get_zero_member_count())
+        print('multi-member:\t%d' % self.get_multi_member_count())
+        print('single-member:\t%d' % self.get_single_member_count())
+        print('zero-member:\t%d' % self.get_zero_member_count())
         print('target pop-per-seat:\t %4.0f' % self.get_target_pop_per_seat())
 
         print('-' * 64)
