@@ -32,3 +32,4 @@
   *  [2021-10-01 08:41AM] Misc
 * [2021-10-01 08:41AM] Implement Map Visual
   *  [2021-10-01 08:41AM] Updated README
+  *  [2021-10-01 08:43AM] Added mapx stub
