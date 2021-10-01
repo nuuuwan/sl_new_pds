@@ -1,5 +1,4 @@
 from gig import ent_types, ents
-from utils import jsonx
 
 from sl_new_pds import _utils, region_utils
 from sl_new_pds._constants import PARENT_TO_CHILD_TYPE
@@ -175,7 +174,7 @@ def mutate_until_only_simple_member(conf, district_id):
     conf.print_stats()
     _utils.print_obj(conf.get_l2g2d2s())
     conf_file = f'/tmp/sl_new_pds.{district_id}.json'
-    jsonx.write(conf_file, conf.__label_to_region_ids__)
+    Conf.write(conf_file, conf)
 
 
 if __name__ == '__main__':

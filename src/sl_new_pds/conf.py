@@ -2,11 +2,11 @@ import json
 import math
 
 from gig import ents, ext_data
-from utils import dt
+from utils import dt, jsonx
 
 from sl_new_pds import _utils, seat_utils
 from sl_new_pds._constants import START_TYPE
-from sl_new_pds._utils import log_time
+from sl_new_pds._utils import log, log_time
 
 
 class Conf:
@@ -19,6 +19,27 @@ class Conf:
 
     def get_label_to_region_ids(self):
         return self.__label_to_region_ids__
+
+    @staticmethod
+    def read(conf_file):
+        data = jsonx.read(conf_file)
+        conf = Conf(
+            total_seats=data['total_seats'],
+            label_to_region_ids=data['label_to_region_ids'],
+        )
+        log.info(f'Read conf from {conf_file}')
+        return conf
+
+    @staticmethod
+    def write(conf_file, conf):
+        jsonx.write(
+            conf_file,
+            dict(
+                total_seats=conf.__total_seats__,
+                label_to_region_ids=conf.__label_to_region_ids__,
+            ),
+        )
+        log.info(f'Wrote conf to {conf_file}')
 
     @staticmethod
     def get_district_to_confs(total_seats):
