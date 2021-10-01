@@ -152,7 +152,7 @@ def mutate_split_max_region(conf):
 
 def mutate_until_only_simple_member(conf, district_id):
     _utils.print_json(conf.get_label_to_demo())
-    MAX_INTERATIONS = 10
+    MAX_INTERATIONS = 100
     for i in range(0, MAX_INTERATIONS):
 
         map_name = f'{district_id}-{i}'
@@ -167,7 +167,11 @@ def mutate_until_only_simple_member(conf, district_id):
 
             conf_file = f'/tmp/sl_new_pds.{map_name}.json'
             Conf.write(conf_file, conf)
-            mapx.draw_map(map_name, conf.get_label_to_region_ids())
+            mapx.draw_map(
+                map_name,
+                conf.get_label_to_region_ids(),
+                conf.get_label_to_seats(),
+            )
 
             if single_member_count == conf.__total_seats__:
                 True, conf

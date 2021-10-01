@@ -21,7 +21,7 @@ def get_color(label):
     return LABEL_TO_COLOR[label]
 
 
-def draw_map(map_name, label_to_region_ids):
+def draw_map(map_name, label_to_region_ids, label_to_seats=None):
     fig, ax = plt.subplots()
 
     for label, region_ids in label_to_region_ids.items():
@@ -33,12 +33,18 @@ def draw_map(map_name, label_to_region_ids):
                 gpd_df = new_gpd_df
             else:
                 gpd_df = gpd_df.append(new_gpd_df)
+
         gpd_df.plot(ax=ax, color=get_color(label))
         xy = [
             gpd_df.centroid.x.tolist()[0],
             gpd_df.centroid.y.tolist()[0],
         ]
-        ax.annotate(label, xy=(xy), horizontalalignment='center')
+        label_final = label
+        if label_to_seats:
+            seats = label_to_seats.get(label)
+            label_final += f' ({seats})'
+
+        ax.annotate(label_final, xy=(xy), horizontalalignment='center', size=6)
 
     map_name_str = dt.to_kebab(map_name)
     image_file = f'/tmp/sl_new_pds.map.{map_name_str}.png'
