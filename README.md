@@ -43,3 +43,4 @@
   *  [2021-10-01 10:13AM] Pre-Merge
   *  [2021-10-01 10:57AM] Fixed Colors
   *  [2021-10-01 02:27PM] Done
+  *  [2021-10-01 02:49PM] Added example-1
