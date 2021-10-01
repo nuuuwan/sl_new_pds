@@ -1,106 +1,12 @@
 import json
 import math
-import time
 
 from gig import ent_types, ents, ext_data
-from gig.ent_types import ENTITY_TYPE
 from utils import dt, jsonx
 
-from sl_new_pds import _utils
-
-# PARENT_TO_CHILD_TYPE = {
-#     ENTITY_TYPE.DISTRICT: ENTITY_TYPE.DSD,
-#     ENTITY_TYPE.DSD: ENTITY_TYPE.GND,
-# }
-
-PARENT_TO_CHILD_TYPE = {
-    ENTITY_TYPE.ED: ENTITY_TYPE.PD,
-    ENTITY_TYPE.PD: ENTITY_TYPE.GND,
-}
-
-
-START_TYPE = list(PARENT_TO_CHILD_TYPE.keys())[0]
-
-
-def remove_zeros(_dict):
-    return dict(
-        list(
-            filter(
-                lambda x: x[1] > 0,
-                _dict.items(),
-            )
-        )
-    )
-
-
-def sort_and_print_dict(_dict):
-    for k, v in sorted(_dict.items(), key=lambda x: -x[1]):
-        if v > 1_000_000:
-            v_m = v / 1_000_000.0
-            print(f'{v_m:,.3g}M\t{k}')
-        elif v > 1_000:
-            v_k = v / 1_000.0
-            print(f'{v_k:,.3g}K\t{k}')
-        else:
-            print(f'{v}\t{k}')
-
-    print('-' * 32)
-
-
-def get_total_pop(label_to_pop):
-    return sum(label_to_pop.values())
-
-
-def get_label(old_label, region_ids):
-    if len(region_ids) > 4:
-        return old_label
-
-    region_ents = list(
-        map(
-            lambda region_id: ents.get_entity(region_id),
-            region_ids,
-        )
-    )
-    label_entity_type = ent_types.get_entity_type(region_ents[0]['id'])
-    return dt.to_kebab(
-        label_entity_type
-        + ' - '
-        + ' and '.join(
-            list(
-                map(
-                    lambda ent: ent['name'],
-                    region_ents,
-                )
-            )
-        )
-    )
-
-
-def allocate_seats(total_seats, label_to_pop):
-    total_pop = sum(label_to_pop.values())
-    label_to_seats = {}
-    label_to_rem = {}
-    total_seats_i = 0
-    for label, pop in label_to_pop.items():
-        seats_r = total_seats * pop / total_pop
-        seats_i = (int)(seats_r)
-        total_seats_i += seats_i
-        rem = seats_r - seats_i
-
-        label_to_seats[label] = seats_i
-        label_to_rem[label] = rem
-
-    excess_seats = total_seats - total_seats_i
-    sorted_labels_and_rem = sorted(
-        label_to_rem.items(),
-        key=lambda x: -x[1],
-    )
-
-    for i in range(0, excess_seats):
-        label = sorted_labels_and_rem[i][0]
-        label_to_seats[label] += 1
-
-    return label_to_seats
+from sl_new_pds import _utils, region_utils, seat_utils
+from sl_new_pds._constants import PARENT_TO_CHILD_TYPE, START_TYPE
+from sl_new_pds._utils import log_time
 
 
 class Conf:
@@ -150,10 +56,15 @@ class Conf:
             label_to_pop[label] = label_pop
         return label_to_pop
 
+    def get_total_pop(self, label_to_pop=None):
+        if label_to_pop is None:
+            label_to_pop = self.get_label_to_pop()
+        return sum(label_to_pop.values())
+
     def get_label_to_seats(self, label_to_pop=None):
         if label_to_pop is None:
             label_to_pop = self.get_label_to_pop()
-        return allocate_seats(self.__total_seats__, label_to_pop)
+        return seat_utils.allocate_seats(self.__total_seats__, label_to_pop)
 
     def get_label_to_demo(self):
         label_to_demo = {}
@@ -184,6 +95,9 @@ class Conf:
             for region_id in region_ids:
                 religion_demo = religious_index[region_id]
                 ethnic_demo = ethnic_index[region_id]
+
+                if not religion_demo or not ethnic_demo:
+                    continue
 
                 demo['_total'] += ethnic_demo['total_population']
 
@@ -237,8 +151,8 @@ class Conf:
                         )
                     )
                 )
-                l2g2d2s[group][label] = remove_zeros(
-                    allocate_seats(seats, label_to_pop0)
+                l2g2d2s[group][label] = _utils.remove_nullish_values(
+                    seat_utils.allocate_seats(seats, label_to_pop0)
                 )
                 for demo, seats in l2g2d2s[group][label].items():
                     if demo not in total_demo_to_seats:
@@ -249,7 +163,7 @@ class Conf:
 
     def get_unfairness(self):
         label_to_pop = self.get_label_to_pop()
-        total_pop = get_total_pop(label_to_pop)
+        total_pop = self.get_total_pop(label_to_pop)
         label_to_seats = self.get_label_to_seats(label_to_pop)
 
         sum_sq_dev_seats_per_seat_r = 0
@@ -298,12 +212,13 @@ class Conf:
         )
 
     def get_target_pop_per_seat(self):
-        total_pop = get_total_pop(self.get_label_to_pop())
+        total_pop = self.get_total_pop(self.get_label_to_pop())
         return total_pop / self.__total_seats__
 
     def copy(self):
         return Conf(_utils.dumb_copy(self.__label_to_region_ids__))
 
+    @log_time
     def mutate_split_max_region(self):
         print('mutate_split_max_region...')
         label_to_pop = self.get_label_to_pop()
@@ -313,7 +228,7 @@ class Conf:
         ][0]
         max_label_pop = label_to_pop[max_label]
         max_label_seats_r = self.__total_seats__ * max_label_pop / total_pop
-        if max_label_seats_r >= 3:
+        if max_label_seats_r >= 2.5:
             target_cand_pop = (
                 (int)(max_label_seats_r / 2 + 0.5)
                 * max_label_pop
@@ -322,8 +237,12 @@ class Conf:
         else:
             target_cand_pop = max_label_pop / 2
 
-        print(
-            f'max_label: {max_label}, {max_label_seats_r}, {target_cand_pop}'
+        _utils.print_json(
+            dict(
+                max_label=max_label,
+                max_label_seats_r=max_label_seats_r,
+                target_cand_pop=target_cand_pop,
+            )
         )
 
         new_label_to_region_ids = _utils.dumb_copy(
@@ -337,7 +256,7 @@ class Conf:
         if len(max_label_region_ids) == 1:
             do_expand = True
 
-        elif len(max_label_region_ids) == 2:
+        elif len(max_label_region_ids) <= 2:
             pops = list(
                 map(
                     lambda region_id: (int)(
@@ -363,7 +282,9 @@ class Conf:
                         lambda ent: ent['id'],
                         list(
                             filter(
-                                lambda ent: max_label_region_id == ent[parent_id_key] and ent['centroid'],
+                                lambda ent: max_label_region_id
+                                == ent[parent_id_key]
+                                and ent['centroid'],
                                 ents.get_entities(child_type),
                             )
                         ),
@@ -396,7 +317,9 @@ class Conf:
         max_north_label = None
         max_south_label = None
         for i in [0, 1]:
-            for p in [i / 10 for i in range(0, 10 + 1)]:
+            N_P = 40
+            prev_cand_pop_div = None
+            for p in [i / N_P for i in range(0, N_P + 1)]:
                 north_label = ['NORTH', 'EAST'][i]
                 south_label = ['SOUTH', 'WEST'][i]
 
@@ -422,6 +345,10 @@ class Conf:
                     max_south_region_ids = south_region_ids
                     max_north_label = north_label
                     max_south_label = south_label
+                if prev_cand_pop_div and prev_cand_pop_div < cand_pop_div:
+                    break
+
+                prev_cand_pop_div = cand_pop_div
 
         del new_label_to_region_ids[max_label]
         new_label_to_region_ids[
@@ -433,15 +360,16 @@ class Conf:
 
         new_label_to_region_ids2 = {}
         for label, region_ids in new_label_to_region_ids.items():
-            new_label = get_label(label, region_ids)
+            new_label = region_utils.get_label(label, region_ids)
             new_label_to_region_ids2[new_label] = region_ids
 
         return Conf(self.__total_seats__, new_label_to_region_ids2)
 
+    @log_time
     def print_stats(self):
         # _utils.print_json(self.__label_to_region_ids__)
-        sort_and_print_dict(self.get_label_to_pop())
-        sort_and_print_dict(self.get_label_to_seats())
+        _utils.print_kv_dict(self.get_label_to_pop())
+        _utils.print_kv_dict(self.get_label_to_seats())
 
         print('unfairness:\t%f' % self.get_unfairness())
         # print('multi-member:\t%d' % self.get_multi_member_count())
@@ -456,22 +384,19 @@ if __name__ == '__main__':
     TOTAL_SEATS = 160
     district_to_confs = Conf.get_district_to_confs(TOTAL_SEATS)
 
-    for district_id, conf in list(district_to_confs.items())[1:2]:
+    for district_id, conf in list(district_to_confs.items())[0:1]:
         _utils.print_json(conf.get_label_to_demo())
-        for i in range(0, 100):
-            print('-' * 64)
-            print('%d)' % (i + 1))
-            print('-' * 64)
-
-            conf.print_stats()
-            _utils.print_json(conf.get_l2g2d2s())
-            conf_file = f'/tmp/sl_new_pds.{district_id}.json'
-            jsonx.write(conf_file, conf.__label_to_region_ids__)
-
-            if conf.get_single_member_count() == conf.__total_seats__:
+        MAX_INTERATIONS = 100
+        for i in range(0, MAX_INTERATIONS):
+            single_member_count = conf.get_single_member_count()
+            p_single_member_count = single_member_count / conf.__total_seats__
+            print(f'{p_single_member_count:.0%} complete...')
+            if single_member_count == conf.__total_seats__:
                 break
-
-            t = time.time()
             conf = conf.mutate_split_max_region()
-            print('t = %dms' % ((time.time() - t) * 1_000))
-        _utils.print_json(conf.get_label_to_demo())
+        _utils.print_obj(conf.get_label_to_demo())
+
+        conf.print_stats()
+        _utils.print_obj(conf.get_l2g2d2s())
+        conf_file = f'/tmp/sl_new_pds.{district_id}.json'
+        jsonx.write(conf_file, conf.__label_to_region_ids__)
