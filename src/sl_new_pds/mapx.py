@@ -100,13 +100,24 @@ def draw_map(
 
 
 if __name__ == '__main__':
-    label_to_region_ids = {
-        'Colombo': [
-            'LK-1127',
-            'LK-1103',
-        ],
-        'Gampaha': [
-            'LK-12',
-        ],
-    }
-    draw_map('New Electoral Districts', label_to_region_ids)
+    draw_map(
+        map_name='New Electoral Districts',
+        label_to_region_ids={
+            'Colombo': [
+                'LK-1127',
+                'LK-1103',
+            ],
+            'Gampaha': [
+                'LK-12',
+            ],
+            {},
+        },
+        label_to_seats={
+            'Colombo': 4,
+            'Gampaha': 19,
+        },
+        label_to_pop={
+            'Colombo': 500_000,
+            'Gampaha': 2_000_000,
+        },
+    )
