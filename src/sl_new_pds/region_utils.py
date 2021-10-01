@@ -5,6 +5,9 @@ from utils import dt
 def get_label(old_label, region_ids):
     if len(region_ids) > 5:
         return old_label
+    plural = ''
+    if len(region_ids) >= 2:
+        plural = 's'
 
     region_ents = list(
         map(
@@ -15,6 +18,7 @@ def get_label(old_label, region_ids):
     label_entity_type = ent_types.get_entity_type(region_ents[0]['id'])
     return dt.to_kebab(
         label_entity_type
+        + plural
         + ' - '
         + ' '.join(
             list(

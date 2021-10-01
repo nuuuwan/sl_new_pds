@@ -57,9 +57,6 @@ def mutate_split_max_region(conf):
         if min_seats_r < 0.95:
             do_expand = True
 
-    if max_label_region_ids[0] != 'EC-01':
-        do_expand = False
-
     if do_expand:
         new_max_label_region_ids = []
         for max_label_region_id in max_label_region_ids:

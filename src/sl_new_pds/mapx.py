@@ -4,11 +4,14 @@ import os
 import random
 
 import geopandas as gpd
+import pandas as pd
 import matplotlib.pyplot as plt
 import pandas as pd
 from geo import geodata
 from gig import ent_types
 from utils import dt
+from shapely.geometry import Polygon
+
 
 from sl_new_pds._constants import IDEAL_POP_PER_SEAT
 from sl_new_pds._utils import log
@@ -43,53 +46,68 @@ def get_pop_color(pop):
 def draw_map(
     map_name, label_to_region_ids, label_to_seats=None, label_to_pop=None
 ):
-    fig, ax = plt.subplots(figsize=(32, 18))
-
+    all_gpd_df_list = []
     for label, region_ids in label_to_region_ids.items():
-        gpd_df_list = []
+        gpd_ds_list = []
         for region_id in region_ids:
             region_type = ent_types.get_entity_type(region_id)
             gpd_df = geodata.get_region_geodata(region_id, region_type)
-            gpd_df_list.append(gpd_df.explode()['geometry'])
-
-        gpd_df = gpd.GeoSeries(pd.concat(gpd_df_list).unary_union)
+            gpd_ds_list.append(gpd_df.explode()['geometry'])
+        gpd_ds = gpd.GeoSeries(pd.concat(gpd_ds_list).unary_union)
 
         from shapely.geometry import JOIN_STYLE
-
         eps = 0.0001
-        gpd_df = gpd_df.buffer(eps, 1, join_style=JOIN_STYLE.mitre).buffer(
+        gpd_ds = gpd_ds.buffer(eps, 1, join_style=JOIN_STYLE.mitre).buffer(
             -eps, 1, join_style=JOIN_STYLE.mitre
         )
 
-        xy = [
-            gpd_df.centroid.x.tolist()[0],
-            gpd_df.centroid.y.tolist()[0],
+        gpd_df = gpd.GeoDataFrame()
+        gpd_df['geometry'] = gpd_ds
+        gpd_df['name'] = label
+
+        seats = label_to_seats.get(label)
+        gpd_df['seats'] = seats
+
+        pop = label_to_pop.get(label)
+        gpd_df['population'] = pop
+
+        gpd_df['population_per_seat'] = gpd_df['population'] / gpd_df['seats']
+
+        all_gpd_df_list.append(gpd_df)
+
+    all_gpd_df = pd.concat(all_gpd_df_list)
+    all_gpd_df.plot(
+        column='population_per_seat',
+        legend=True,
+        cmap='coolwarm',
+        figsize=(16, 9),
+        edgecolor="black",
+        linewidth=1,
+    )
+
+    for idx, row in all_gpd_df.iterrows():
+        [x, y] = [
+            row['geometry'].centroid.x,
+            row['geometry'].centroid.y,
         ]
-
-        label_final = label
-        color = get_label_color(label)
-        if label_to_seats:
-            seats = label_to_seats.get(label)
-            label_final += f' ({seats})'
-
-            if label_to_pop:
-                pop = label_to_pop.get(label)
-                color = get_pop_color(pop / seats)
-                if pop > 1_000_000:
-                    pop_m = pop / 1_000_000
-                    label_final += f' - {pop_m:.3g}M'
-                elif pop > 1_000:
-                    pop_k = pop / 1_000
-                    label_final += f' - {pop_k:.3g}K'
-                else:
-                    label_final += f' - {pop:.3g}'
-
-        gpd_df.plot(ax=ax, color=color, edgecolor="black", linewidth=1)
-        ax.annotate(
-            label_final, xy=(xy), horizontalalignment='center', size=12
+        plt.annotate(
+            s=row['name'],
+            xy=[x, y],
+            horizontalalignment='center',
+            fontsize=8,
         )
+        population_k = row['population'] / 1_000
+        seats = row['seats']
+        seats_str = ''
+        if seats > 1:
+            seats_str = f' ({seats})'
 
-    ax.legend(loc='lower right', fontsize=15, frameon=True)
+        plt.annotate(
+            s=f'{population_k:.3g}K {seats_str}',
+            xy=[x, y + 0.004],
+            horizontalalignment='center',
+            fontsize=12,
+        )
 
     map_name_str = dt.to_kebab(map_name)
     image_file = f'/tmp/sl_new_pds.map.{map_name_str}.png'
@@ -103,21 +121,39 @@ if __name__ == '__main__':
     draw_map(
         map_name='New Electoral Districts',
         label_to_region_ids={
-            'Colombo': [
-                'LK-1127',
-                'LK-1103',
+            'Colombo North': [
+                'EC-01A',
             ],
-            'Gampaha': [
-                'LK-12',
+            'Colombo Central': [
+                'EC-01B',
             ],
-            {},
+            'Borella': [
+                'EC-01C',
+            ],
+            'Colombo East': [
+                'EC-01D',
+            ],
+            'Colombo West': [
+                'EC-01E',
+            ],
+            'Kaduwela': [
+                'EC-01J',
+            ],
         },
         label_to_seats={
-            'Colombo': 4,
-            'Gampaha': 19,
+            'Colombo North': 1,
+            'Colombo Central': 1,
+            'Borella': 1,
+            'Colombo East': 1,
+            'Colombo West': 1,
+            'Kaduwela': 1,
         },
         label_to_pop={
-            'Colombo': 500_000,
-            'Gampaha': 2_000_000,
+            'Colombo North': 121603,
+            'Colombo Central': 201620,
+            'Borella': 89806,
+            'Colombo East': 93260,
+            'Colombo West': 54682,
+            'Kaduwela': 252041,
         },
     )

@@ -7,23 +7,9 @@ gpd_df = geodata.get_region_geodata('EC-01', 'pd')
 
 gpd_df.plot(
     column='population',
-
-    scheme='UserDefined',
-    classification_kwds={
-        'bins': [60_000, 95_000, 150_000, 240_000],
-    },
     legend=True,
-    legend_kwds={
-        'labels': [
-            '< 60K',
-            '60K - 95K',
-            '95K - 150K',
-            '150K - 240K',
-            '240K <',
-        ],
-    },
     cmap='coolwarm',
-    figsize=(7, 9),
+    figsize=(16, 9),
     edgecolor="black",
     linewidth=1,
 )
