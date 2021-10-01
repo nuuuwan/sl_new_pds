@@ -34,6 +34,11 @@ def draw_map(map_name, label_to_region_ids):
             else:
                 gpd_df = gpd_df.append(new_gpd_df)
         gpd_df.plot(ax=ax, color=get_color(label))
+        xy = [
+            gpd_df.centroid.x.tolist()[0],
+            gpd_df.centroid.y.tolist()[0],
+        ]
+        ax.annotate(label, xy=(xy), horizontalalignment='center')
 
     map_name_str = dt.to_kebab(map_name)
     image_file = f'/tmp/sl_new_pds.map.{map_name_str}.png'
