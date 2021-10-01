@@ -1,7 +1,7 @@
 from gig import ent_types, ents
 
 from sl_new_pds import _utils, mapx, region_utils
-from sl_new_pds._constants import PARENT_TO_CHILD_TYPE
+from sl_new_pds._constants import PARENT_TO_CHILD_TYPE, TOTAL_SEATS_SL
 from sl_new_pds._utils import log_time
 from sl_new_pds.conf import Conf
 
@@ -42,7 +42,7 @@ def mutate_split_max_region(conf):
     if len(max_label_region_ids) == 1:
         do_expand = True
 
-    elif len(max_label_region_ids) <= 2:
+    elif len(max_label_region_ids) <= 3:
         pops = list(
             map(
                 lambda region_id: (int)(
@@ -54,7 +54,7 @@ def mutate_split_max_region(conf):
         cand_pop = min(pops)
         min_seats_r = conf.get_total_seats() * cand_pop / total_pop
         print(max_label_region_ids, cand_pop, min_seats_r)
-        if min_seats_r < 0.9:
+        if min_seats_r < 0.95:
             do_expand = True
 
     if do_expand:
@@ -100,39 +100,44 @@ def mutate_split_max_region(conf):
     max_south_region_ids = None
     max_north_label = None
     max_south_label = None
-    for i in [0, 1]:
-        N_P = 40
-        prev_cand_pop_div = None
-        for p in [i / N_P for i in range(0, N_P + 1)]:
-            north_label = ['NORTH', 'EAST'][i]
-            south_label = ['SOUTH', 'WEST'][i]
 
-            north_region_ids = []
-            south_region_ids = []
-            north_pop = 0
-            south_pop = 0
-            min_bound, max_bound = bounds[0][i], bounds[1][i]
-            for region_id, centroid, pop in zip(
-                new_max_label_region_ids, centroids, pops
-            ):
-                if centroid[i] > (min_bound + (max_bound - min_bound) * p):
-                    north_region_ids.append(region_id)
-                    north_pop += pop
-                else:
-                    south_region_ids.append(region_id)
-                    south_pop += pop
-            cand_pop = north_pop
-            cand_pop_div = abs(cand_pop - target_cand_pop)
-            if not min_cand_pop_div or min_cand_pop_div > cand_pop_div:
-                min_cand_pop_div = cand_pop_div
-                max_north_region_ids = north_region_ids
-                max_south_region_ids = south_region_ids
-                max_north_label = north_label
-                max_south_label = south_label
-            if prev_cand_pop_div and prev_cand_pop_div < cand_pop_div:
-                break
+    if (bounds[1][0] - bounds[0][0]) > (bounds[1][1] - bounds[0][1]):
+        i = 0
+    else:
+        i = 1
 
-            prev_cand_pop_div = cand_pop_div
+    N_P = 40
+    prev_cand_pop_div = None
+    for p in [i_p / N_P for i_p in range(0, N_P + 1)]:
+        north_label = ['NORTH', 'EAST'][i]
+        south_label = ['SOUTH', 'WEST'][i]
+
+        north_region_ids = []
+        south_region_ids = []
+        north_pop = 0
+        south_pop = 0
+        min_bound, max_bound = bounds[0][i], bounds[1][i]
+        for region_id, centroid, pop in zip(
+            new_max_label_region_ids, centroids, pops
+        ):
+            if centroid[i] > (min_bound + (max_bound - min_bound) * p):
+                north_region_ids.append(region_id)
+                north_pop += pop
+            else:
+                south_region_ids.append(region_id)
+                south_pop += pop
+        cand_pop = north_pop
+        cand_pop_div = abs(cand_pop - target_cand_pop)
+        if not min_cand_pop_div or min_cand_pop_div > cand_pop_div:
+            min_cand_pop_div = cand_pop_div
+            max_north_region_ids = north_region_ids
+            max_south_region_ids = south_region_ids
+            max_north_label = north_label
+            max_south_label = south_label
+        if prev_cand_pop_div and prev_cand_pop_div < cand_pop_div:
+            break
+
+        prev_cand_pop_div = cand_pop_div
 
     del new_label_to_region_ids[max_label]
     new_label_to_region_ids[
@@ -153,17 +158,22 @@ def mutate_split_max_region(conf):
 def mutate_until_only_simple_member(conf, district_id):
     _utils.print_json(conf.get_label_to_demo())
     MAX_INTERATIONS = 100
+    is_complete = False
     for i in range(0, MAX_INTERATIONS):
 
-        map_name = f'{district_id}-{i}'
-
         @log_time
-        def inner(conf=conf):
+        def inner(conf=conf, is_complete=is_complete):
             single_member_count = conf.get_single_member_count()
             p_single_member_count = single_member_count / conf.__total_seats__
             print('-' * 64)
             print(f'{i}) {p_single_member_count:.0%} complete...')
             print('-' * 64)
+
+            if single_member_count == conf.__total_seats__:
+                map_name = f'{district_id}-FINAL'
+                is_complete = True
+            else:
+                map_name = f'{district_id}-{i}'
 
             conf_file = f'/tmp/sl_new_pds.{map_name}.json'
             Conf.write(conf_file, conf)
@@ -173,10 +183,9 @@ def mutate_until_only_simple_member(conf, district_id):
                 conf.get_label_to_seats(),
                 conf.get_label_to_pop(),
             )
-
-            if single_member_count == conf.__total_seats__:
-                return True, conf
-            return False, mutate_split_max_region(conf)
+            if is_complete:
+                return is_complete, conf
+            return is_complete, mutate_split_max_region(conf)
 
         is_complete, conf = inner(conf)
         if is_complete:
@@ -188,15 +197,10 @@ def mutate_until_only_simple_member(conf, district_id):
     map_name = f'{district_id}-FINAL'
     conf_file = f'/tmp/sl_new_pds.{map_name}.json'
     Conf.write(conf_file, conf)
-    mapx.draw_map(
-        map_name,
-        conf.get_label_to_region_ids(),
-    )
 
 
 if __name__ == '__main__':
-    TOTAL_SEATS = 160
-    district_to_confs = Conf.get_district_to_confs(TOTAL_SEATS)
+    district_to_confs = Conf.get_district_to_confs(TOTAL_SEATS_SL)
 
-    for district_id, conf in list(district_to_confs.items())[2:3]:
+    for district_id, conf in list(district_to_confs.items())[14:15]:
         mutate_until_only_simple_member(conf, district_id)
