@@ -4,14 +4,11 @@ import os
 import random
 
 import geopandas as gpd
-import pandas as pd
 import matplotlib.pyplot as plt
 import pandas as pd
 from geo import geodata
 from gig import ent_types
 from utils import dt
-from shapely.geometry import Polygon
-
 
 from sl_new_pds._constants import IDEAL_POP_PER_SEAT
 from sl_new_pds._utils import log
@@ -56,6 +53,7 @@ def draw_map(
         gpd_ds = gpd.GeoSeries(pd.concat(gpd_ds_list).unary_union)
 
         from shapely.geometry import JOIN_STYLE
+
         eps = 0.0001
         gpd_ds = gpd_ds.buffer(eps, 1, join_style=JOIN_STYLE.mitre).buffer(
             -eps, 1, join_style=JOIN_STYLE.mitre
@@ -90,11 +88,15 @@ def draw_map(
             row['geometry'].centroid.x,
             row['geometry'].centroid.y,
         ]
+        name_str = row['name']
+        if name_str[:3] != 'pd-':
+            name_str = ''
+
         plt.annotate(
-            s=row['name'],
+            s=name_str,
             xy=[x, y],
             horizontalalignment='center',
-            fontsize=8,
+            fontsize=7,
         )
         population_k = row['population'] / 1_000
         seats = row['seats']
@@ -106,7 +108,7 @@ def draw_map(
             s=f'{population_k:.3g}K {seats_str}',
             xy=[x, y + 0.004],
             horizontalalignment='center',
-            fontsize=12,
+            fontsize=9,
         )
 
     map_name_str = dt.to_kebab(map_name)

@@ -1,6 +1,6 @@
 from gig import ent_types, ents
 
-from sl_new_pds import _utils, mapx, region_utils
+from sl_new_pds import _utils, region_utils
 from sl_new_pds._constants import PARENT_TO_CHILD_TYPE, TOTAL_SEATS_SL
 from sl_new_pds._utils import log_time
 from sl_new_pds.conf import Conf
@@ -104,9 +104,10 @@ def mutate_split_max_region(conf):
     span_0 = bounds[1][0] - bounds[0][0]
     span_1 = bounds[1][1] - bounds[0][1]
 
-    if span_0 > 3 * span_1:
+    SPAN_K = 2
+    if span_0 > SPAN_K * span_1:
         i_list = [0]
-    elif span_1 > 3 * span_0:
+    elif span_1 > SPAN_K * span_0:
         i_list = [1]
     else:
         i_list = [0, 1]
@@ -115,8 +116,8 @@ def mutate_split_max_region(conf):
     for i in i_list:
         prev_cand_pop_div = None
         for p in [i_p / N_P for i_p in range(0, N_P + 1)]:
-            north_label = ['NORTH', 'EAST'][i]
-            south_label = ['SOUTH', 'WEST'][i]
+            north_label = ['N', 'E'][i]
+            south_label = ['S', 'W'][i]
 
             north_region_ids = []
             south_region_ids = []
@@ -183,12 +184,7 @@ def mutate_until_only_simple_member(conf, district_id):
 
             conf_file = f'/tmp/sl_new_pds.{map_name}.json'
             Conf.write(conf_file, conf)
-            mapx.draw_map(
-                map_name,
-                conf.get_label_to_region_ids(),
-                conf.get_label_to_seats(),
-                conf.get_label_to_pop(),
-            )
+            conf.draw_map(map_name)
             if is_complete:
                 return is_complete, conf
             return is_complete, mutate_split_max_region(conf)

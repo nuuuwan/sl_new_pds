@@ -4,7 +4,7 @@ import math
 from gig import ents, ext_data
 from utils import dt, jsonx
 
-from sl_new_pds import _utils, seat_utils
+from sl_new_pds import _utils, mapx, seat_utils
 from sl_new_pds._constants import START_TYPE
 from sl_new_pds._utils import log, log_time
 
@@ -244,6 +244,14 @@ class Conf:
 
     def copy(self):
         return Conf(_utils.dumb_copy(self.__label_to_region_ids__))
+
+    def draw_map(self, map_name):
+        mapx.draw_map(
+            map_name,
+            self.get_label_to_region_ids(),
+            self.get_label_to_seats(),
+            self.get_label_to_pop(),
+        )
 
     @log_time
     def print_stats(self):

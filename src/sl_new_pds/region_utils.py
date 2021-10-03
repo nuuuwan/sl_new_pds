@@ -3,10 +3,11 @@ from utils import dt
 
 
 def get_label(old_label, region_ids):
-    if len(region_ids) > 5:
+    if len(region_ids) > 2:
         return old_label
+
     plural = ''
-    if len(region_ids) >= 2:
+    if len(region_ids) == 2:
         plural = 's'
 
     region_ents = list(

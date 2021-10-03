@@ -1,5 +1,4 @@
 """Example."""
-import os
 import matplotlib.pyplot as plt
 from geo import geodata
 
@@ -15,15 +14,22 @@ gpd_df.plot(
 )
 
 for idx, row in gpd_df.iterrows():
-    xy = [
+    [x, y] = [
         row['geometry'].centroid.x,
         row['geometry'].centroid.y,
     ]
     plt.annotate(
         s=row['name'],
-        xy=xy,
+        xy=[x, y],
         horizontalalignment='center',
-        fontsize=8,
+        fontsize=7,
+    )
+    population_k = row['population'] / 1_000
+    plt.annotate(
+        s=f'{population_k:.3g}K',
+        xy=[x, y + 0.004],
+        horizontalalignment='center',
+        fontsize=9,
     )
 
 plt.title('Colombo Electoral District - Polling Divisions')
