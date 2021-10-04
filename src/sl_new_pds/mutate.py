@@ -45,10 +45,15 @@ def split_region_tentative(conf, split_label):
 
     split_label_pop = label_to_pop[split_label]
     split_label_seats_r = total_seats * split_label_pop / total_pop
+
     if split_label_seats_r < 2:
         split_label_seats_round = split_label_seats_r * 0.5
     else:
-        split_label_seats_round = round(split_label_seats_r, 0) * 0.5
+        split_label_seats_round = round(split_label_seats_r, 0)
+        split_label_seats_round = (int)(split_label_seats_round * 0.5) * (
+            split_label_seats_r / split_label_seats_round
+        )
+
     split_point_pop = split_label_seats_round * total_pop / total_seats
 
     region_ids = conf.get_label_to_region_ids()[split_label]
@@ -80,57 +85,98 @@ def split_region_tentative(conf, split_label):
     lat_span, lng_span = max_lat - min_lat, max_lng - min_lng
 
     search_meta_list = []
-    if 1.2 * lat_span > lng_span:
+    LAT_LNG_SKEW = 1.25
+    if LAT_LNG_SKEW * lng_span > lat_span:
+        low_prefix = 'W'
+        high_prefix = 'E'
+        ents_sorted = sorted(
+            region_ents,
+            key=lambda e: e['centroid'][1],
+        )
         search_meta_list.append(
             dict(
-                low_prefix='S',
-                high_prefix='N',
-                ents_sorted=sorted(
-                    region_ents,
-                    key=lambda e: e['centroid'][0],
-                ),
+                low_prefix=low_prefix,
+                high_prefix=high_prefix,
+                ents_sorted=ents_sorted,
+            )
+        )
+        search_meta_list.append(
+            dict(
+                low_prefix=high_prefix,
+                high_prefix=low_prefix,
+                ents_sorted=reversed(ents_sorted),
             )
         )
 
-    if 1.2 * lng_span > lat_span:
+    if LAT_LNG_SKEW * lat_span > lng_span:
+        low_prefix = 'S'
+        high_prefix = 'N'
+        ents_sorted = sorted(
+            region_ents,
+            key=lambda e: e['centroid'][0],
+        )
         search_meta_list.append(
             dict(
-                low_prefix='W',
-                high_prefix='E',
-                ents_sorted=sorted(
-                    region_ents,
-                    key=lambda e: e['centroid'][1],
-                ),
+                low_prefix=low_prefix,
+                high_prefix=high_prefix,
+                ents_sorted=ents_sorted,
+            )
+        )
+        search_meta_list.append(
+            dict(
+                low_prefix=high_prefix,
+                high_prefix=low_prefix,
+                ents_sorted=reversed(ents_sorted),
             )
         )
 
-    min_split_total_pop = None
+    min_split_cum_pop = None
     sel_low_region_ids = []
     sel_high_region_ids = []
     for search_meta in search_meta_list:
-        split_total_pop = 0
-        total_pop = 0
+        split_cum_pop = 0
+        cum_pop = 0
         low_region_ids = []
         high_region_ids = []
 
         for e in search_meta['ents_sorted']:
             pop = e['population']
-            total_pop += pop
-            if total_pop < split_point_pop:
+            cum_pop += pop
+            if cum_pop < split_point_pop:
                 low_region_ids.append(e['id'])
-                split_total_pop = total_pop
+                split_cum_pop = cum_pop
             else:
                 high_region_ids.append(e['id'])
 
-        if not min_split_total_pop or (
-            split_total_pop != 0 and split_total_pop < min_split_total_pop
+        if not min_split_cum_pop or (
+            split_cum_pop != 0 and split_cum_pop < min_split_cum_pop
         ):
-            min_split_total_pop = split_total_pop
+            min_split_cum_pop = split_cum_pop
 
             sel_low_prefix = search_meta['low_prefix']
             sel_high_prefix = search_meta['high_prefix']
             sel_low_region_ids = low_region_ids
             sel_high_region_ids = high_region_ids
+
+    split_cum_pop_seats_r = split_cum_pop * total_seats / total_pop
+    rev_split_cum_pop_seats_r = (
+        (split_label_pop - split_cum_pop) * total_seats / total_pop
+    )
+
+    SEAT_LIMIT = 0.7
+    print(
+        split_label,
+        split_cum_pop,
+        split_cum_pop_seats_r,
+        rev_split_cum_pop_seats_r,
+        SEAT_LIMIT,
+    )
+
+    if (
+        split_cum_pop_seats_r < SEAT_LIMIT
+        or rev_split_cum_pop_seats_r < SEAT_LIMIT
+    ):
+        return None
 
     if not (high_region_ids and low_region_ids):
         return None
@@ -222,5 +268,5 @@ def mutate_until_only_simple_member(conf, district_id):
 if __name__ == '__main__':
     district_to_confs = Conf.get_district_to_confs(TOTAL_SEATS_SL)
 
-    for district_id, conf in list(district_to_confs.items())[2:3]:
+    for district_id, conf in list(district_to_confs.items())[3:4]:
         mutate_until_only_simple_member(conf, district_id)

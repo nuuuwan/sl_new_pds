@@ -11,7 +11,7 @@ from gig import ent_types
 from utils import dt
 
 from sl_new_pds._constants import IDEAL_POP_PER_SEAT
-from sl_new_pds._utils import log
+from sl_new_pds._utils import log, log_time
 
 LABEL_TO_COLOR = {}
 
@@ -28,23 +28,59 @@ def get_label_color(label):
 
 
 def get_pop_color(pop):
-    p_pop = pop / IDEAL_POP_PER_SEAT
-    LIMIT_P = 3
-    p_pop = max(min(p_pop, LIMIT_P), 1.0 / LIMIT_P)
-    log_p_pop = math.log(p_pop) / math.log(LIMIT_P)
+    pop_r = pop / IDEAL_POP_PER_SEAT
+    log_pop_r = math.log(pop_r) / math.log(2)
+    abs_log_pop_r = abs(log_pop_r)
 
-    h = 0 if (log_p_pop > 0) else 120
-    lightness = 1 - 0.5 * abs(log_p_pop)
-    s = 1.0
-    r, g, b = colorsys.hls_to_rgb(h, lightness, s)
-    return r, g, b
+    h = 0 if (log_pop_r > 0) else 2 / 3
+
+    if abs_log_pop_r < 0.25:
+        s = 0
+        lightness = 0.75
+    else:
+        s = 1
+        if abs_log_pop_r > 1:
+            lightness = 0.25
+        elif abs_log_pop_r > 0.5:
+            lightness = 0.5
+        else:
+            lightness = 0.75
+
+    return colorsys.hls_to_rgb(h, lightness, s)
 
 
+def get_pop_color2(pop):
+    pop_r = pop / IDEAL_POP_PER_SEAT
+    log_pop_r = math.log(pop_r) / math.log(2)
+
+    abs_log_pop_r = min(abs(log_pop_r), 1)
+    P_POP_PER_SEAT_LIMIT = 0.25
+    log_limit = math.log(P_POP_PER_SEAT_LIMIT + 1) / math.log(2)
+
+    if abs_log_pop_r < log_limit:
+        return (0.8, 0.8, 0.8)
+
+    h = 0 if (log_pop_r > 0) else 2 / 3
+    lightness = 1 - 0.8 * (abs_log_pop_r - P_POP_PER_SEAT_LIMIT) / (
+        1 - P_POP_PER_SEAT_LIMIT
+    )
+    s = 1
+
+    return colorsys.hls_to_rgb(h, lightness, s)
+
+
+@log_time
 def draw_map(
     map_name, label_to_region_ids, label_to_seats=None, label_to_pop=None
 ):
     all_gpd_df_list = []
-    for i_label, [label, region_ids] in enumerate(label_to_region_ids.items()):
+
+    label_and_region_ids = sorted(
+        label_to_region_ids.items(),
+        key=lambda x: -label_to_pop[x[0]],
+    )
+
+    for i_label, [label, region_ids] in enumerate(label_and_region_ids):
         gpd_ds_list = []
         for region_id in region_ids:
             region_type = ent_types.get_entity_type(region_id)
@@ -72,13 +108,15 @@ def draw_map(
 
         gpd_df['population_per_seat'] = gpd_df['population'] / gpd_df['seats']
 
+        gpd_df['color'] = gpd_df['population_per_seat'].map(
+            lambda population_per_seat: get_pop_color(population_per_seat)
+        )
+
         all_gpd_df_list.append(gpd_df)
 
     all_gpd_df = pd.concat(all_gpd_df_list)
     all_gpd_df.plot(
-        column='population_per_seat',
-        legend=True,
-        cmap='coolwarm',
+        color=all_gpd_df['color'],
         figsize=(16, 9),
         edgecolor="black",
         linewidth=1,

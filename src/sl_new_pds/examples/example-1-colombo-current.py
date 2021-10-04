@@ -1,42 +1,32 @@
 """Example."""
-import matplotlib.pyplot as plt
-from geo import geodata
+from gig import ents
 
-gpd_df = geodata.get_region_geodata('EC-01', 'pd')
+from sl_new_pds import mapx
 
-gpd_df.plot(
-    column='population',
-    legend=True,
-    cmap='coolwarm',
-    figsize=(16, 9),
-    edgecolor="black",
-    linewidth=1,
-)
+if __name__ == '__main__':
 
-for idx, row in gpd_df.iterrows():
-    [x, y] = [
-        row['geometry'].centroid.x,
-        row['geometry'].centroid.y,
-    ]
-    plt.text(
-        s=row['name'],
-        xy=[x, y],
-        horizontalalignment='center',
-        fontsize=7,
+    ED_ID = 'EC-01'
+
+    label_to_region_ids = {}
+    label_to_pop = {}
+    label_to_seats = {}
+
+    for pd_ent in ents.get_entities('pd'):
+        if pd_ent['ed_id'] != ED_ID:
+            continue
+        label = pd_ent['name']
+        pop = pd_ent['population']
+        if not pop:
+            continue
+        region_ids = [pd_ent['id']]
+
+        label_to_region_ids[label] = region_ids
+        label_to_pop[label] = pop
+        label_to_seats[label] = 1
+
+    mapx.draw_map(
+        map_name=ED_ID,
+        label_to_region_ids=label_to_region_ids,
+        label_to_pop=label_to_pop,
+        label_to_seats=label_to_seats,
     )
-    population_k = row['population'] / 1_000
-    plt.text(
-        s=f'{population_k:.3g}K',
-        xy=[x, y + 0.004],
-        horizontalalignment='center',
-        fontsize=9,
-    )
-
-plt.title('Colombo Electoral District - Polling Divisions')
-
-image_file = __file__ + '.png'
-
-fig = plt.gcf()
-fig.set_size_inches(16, 9)
-plt.savefig(image_file)
-plt.show()

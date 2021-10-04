@@ -1,6 +1,6 @@
 # Auto Generated
 bs4
-pytest
+pygeos
 selenium
 tweepy
 utils-nuuuwan
