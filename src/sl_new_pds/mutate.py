@@ -163,7 +163,7 @@ def split_region_tentative(conf, split_label):
         (split_label_pop - split_cum_pop) * total_seats / total_pop
     )
 
-    SEAT_LIMIT = 0.7
+    SEAT_LIMIT = 0.9
     print(
         split_label,
         split_cum_pop,
@@ -176,7 +176,10 @@ def split_region_tentative(conf, split_label):
         split_cum_pop_seats_r < SEAT_LIMIT
         or rev_split_cum_pop_seats_r < SEAT_LIMIT
     ):
-        return None
+        first_region_id = region_ids[0]
+        first_region_id_type = ent_types.get_entity_type(first_region_id)
+        if PARENT_TO_CHILD_TYPE.get(first_region_id_type):
+            return None
 
     if not (high_region_ids and low_region_ids):
         return None
@@ -268,5 +271,5 @@ def mutate_until_only_simple_member(conf, district_id):
 if __name__ == '__main__':
     district_to_confs = Conf.get_district_to_confs(TOTAL_SEATS_SL)
 
-    for district_id, conf in list(district_to_confs.items())[3:4]:
+    for district_id, conf in list(district_to_confs.items())[5:6]:
         mutate_until_only_simple_member(conf, district_id)

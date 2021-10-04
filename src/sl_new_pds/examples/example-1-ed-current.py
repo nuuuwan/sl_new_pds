@@ -1,11 +1,16 @@
 """Example."""
+import os
+
 from gig import ents
+from utils import dt
 
 from sl_new_pds import mapx
 
 if __name__ == '__main__':
 
-    ED_ID = 'EC-01'
+    ED_ID = 'EC-07'
+    ed_ent = ents.get_entity(ED_ID)
+    ed_label = dt.to_kebab(ED_ID + ' ' + ed_ent['name'])
 
     label_to_region_ids = {}
     label_to_pop = {}
@@ -24,9 +29,12 @@ if __name__ == '__main__':
         label_to_pop[label] = pop
         label_to_seats[label] = 1
 
-    mapx.draw_map(
-        map_name=ED_ID,
+    tmp_image_file = mapx.draw_map(
+        map_name=ed_label,
         label_to_region_ids=label_to_region_ids,
         label_to_pop=label_to_pop,
         label_to_seats=label_to_seats,
     )
+    ed_str = dt.to_kebab(ed_label)
+    img_file = f'src/sl_new_pds/examples/example-1-ed-current.{ed_str}.png'
+    os.system(f'cp "{tmp_image_file}" "{img_file}"')

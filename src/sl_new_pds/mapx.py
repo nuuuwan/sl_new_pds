@@ -36,15 +36,15 @@ def get_pop_color(pop):
 
     if abs_log_pop_r < 0.25:
         s = 0
-        lightness = 0.75
+        lightness = 0.9
     else:
         s = 1
         if abs_log_pop_r > 1:
-            lightness = 0.25
-        elif abs_log_pop_r > 0.5:
             lightness = 0.5
+        elif abs_log_pop_r > 0.5:
+            lightness = 0.7
         else:
-            lightness = 0.75
+            lightness = 0.9
 
     return colorsys.hls_to_rgb(h, lightness, s)
 
