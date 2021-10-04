@@ -1,14 +1,14 @@
-from gig import ent_types, ents
+from gig import ents
 from utils import dt
 
 
 def get_label(old_label, region_ids):
-    if len(region_ids) > 2:
+    if len(region_ids) > 5:
         return old_label
 
-    plural = ''
-    if len(region_ids) == 2:
-        plural = 's'
+    # plural = ''
+    # if len(region_ids) == 2:
+    #     plural = 's'
 
     region_ents = list(
         map(
@@ -16,12 +16,12 @@ def get_label(old_label, region_ids):
             region_ids,
         )
     )
-    label_entity_type = ent_types.get_entity_type(region_ents[0]['id'])
+    # label_entity_type = ent_types.get_entity_type(region_ents[0]['id'])
     return dt.to_kebab(
-        label_entity_type
-        + plural
-        + ' - '
-        + ' '.join(
+        # label_entity_type
+        # + plural
+        # + ' - '
+        ' '.join(
             list(
                 map(
                     lambda ent: ent['name'],

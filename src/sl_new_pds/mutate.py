@@ -2,179 +2,199 @@ from gig import ent_types, ents
 
 from sl_new_pds import _utils, region_utils
 from sl_new_pds._constants import PARENT_TO_CHILD_TYPE, TOTAL_SEATS_SL
-from sl_new_pds._utils import log_time
+from sl_new_pds._utils import log, log_time
 from sl_new_pds.conf import Conf
 
 
 @log_time
-def mutate_split_max_region(conf):
-    print('mutate_split_max_region...')
+def expand_region(conf, expand_label):
+    expand_label_region_ids = conf.get_label_to_region_ids()[expand_label]
+    all_expanded_region_ids = []
+    for region_id in expand_label_region_ids:
+        region_type = ent_types.get_entity_type(region_id)
+        child_type = PARENT_TO_CHILD_TYPE[region_type]
+        parent_id_key = region_type + '_id'
+
+        expanded_region_ids = list(
+            map(
+                lambda ent: ent['id'],
+                list(
+                    filter(
+                        lambda ent: region_id == ent[parent_id_key]
+                        and ent['centroid'],
+                        ents.get_entities(child_type),
+                    )
+                ),
+            )
+        )
+        all_expanded_region_ids += expanded_region_ids
+
+    new_label_to_region_ids = conf.get_label_to_region_ids()
+    new_label_to_region_ids[expand_label] = all_expanded_region_ids
+    return Conf(
+        total_seats=conf.get_total_seats(),
+        label_to_region_ids=new_label_to_region_ids,
+    )
+
+
+@log_time
+def split_region_tentative(conf, split_label):
     label_to_pop = conf.get_label_to_pop()
     total_pop = sum(label_to_pop.values())
-    max_label = sorted(label_to_pop.items(), key=lambda x: -x[1],)[
-        0
-    ][0]
-    max_label_pop = label_to_pop[max_label]
-    max_label_seats_r = conf.get_total_seats() * max_label_pop / total_pop
-    if max_label_seats_r >= 2.5:
-        target_cand_pop = (
-            (int)(max_label_seats_r / 2 + 0.5)
-            * max_label_pop
-            / max_label_seats_r
-        )
-    else:
-        target_cand_pop = max_label_pop / 2
+    total_seats = conf.get_total_seats()
 
-    _utils.print_json(
-        dict(
-            max_label=max_label,
-            max_label_seats_r=max_label_seats_r,
-            target_cand_pop=target_cand_pop,
+    split_label_pop = label_to_pop[split_label]
+    split_label_seats_r = total_seats * split_label_pop / total_pop
+    if split_label_seats_r < 2:
+        split_label_seats_round = split_label_seats_r * 0.5
+    else:
+        split_label_seats_round = round(split_label_seats_r, 0) * 0.5
+    split_point_pop = split_label_seats_round * total_pop / total_seats
+
+    region_ids = conf.get_label_to_region_ids()[split_label]
+    n_regions = len(region_ids)
+
+    log.info(
+        'Splitting (Tentative) %s ' % (split_label)
+        + '(%d child regions, %4.2f seats, %4.3fK pop) '
+        % (
+            n_regions,
+            split_label_seats_r,
+            split_label_pop / 1_000,
+        )
+        + 'at %d (%4.1f seats)'
+        % (
+            split_point_pop,
+            split_label_seats_round,
         )
     )
 
-    new_label_to_region_ids = _utils.dumb_copy(conf.get_label_to_region_ids())
+    region_ents = list(
+        map(
+            lambda region_id: ents.get_entity(region_id),
+            region_ids,
+        )
+    )
+    centroids = list(map(lambda e: e['centroid'], region_ents))
+    [[min_lat, min_lng], [max_lat, max_lng]] = _utils.get_bounds(centroids)
+    lat_span, lng_span = max_lat - min_lat, max_lng - min_lng
 
-    # If label points to single region then expand region
-    max_label_region_ids = conf.get_label_to_region_ids()[max_label]
-    do_expand = False
-
-    if len(max_label_region_ids) == 1:
-        do_expand = True
-
-    elif len(max_label_region_ids) <= 3.5:
-        pops = list(
-            map(
-                lambda region_id: (int)(
-                    ents.get_entity(region_id)['population']
+    search_meta_list = []
+    if 1.2 * lat_span > lng_span:
+        search_meta_list.append(
+            dict(
+                low_prefix='S',
+                high_prefix='N',
+                ents_sorted=sorted(
+                    region_ents,
+                    key=lambda e: e['centroid'][0],
                 ),
-                max_label_region_ids,
             )
         )
-        cand_pop = min(pops)
-        min_seats_r = conf.get_total_seats() * cand_pop / total_pop
-        print(max_label_region_ids, cand_pop, min_seats_r)
-        if min_seats_r < 0.95:
-            do_expand = True
 
-    if do_expand:
-        new_max_label_region_ids = []
-        for max_label_region_id in max_label_region_ids:
-            max_label_type = ent_types.get_entity_type(max_label_region_id)
-            child_type = PARENT_TO_CHILD_TYPE[max_label_type]
-            parent_id_key = max_label_type + '_id'
-            new_max_label_region_ids0 = list(
-                map(
-                    lambda ent: ent['id'],
-                    list(
-                        filter(
-                            lambda ent: max_label_region_id
-                            == ent[parent_id_key]
-                            and ent['centroid'],
-                            ents.get_entities(child_type),
-                        )
-                    ),
-                )
+    if 1.2 * lng_span > lat_span:
+        search_meta_list.append(
+            dict(
+                low_prefix='W',
+                high_prefix='E',
+                ents_sorted=sorted(
+                    region_ents,
+                    key=lambda e: e['centroid'][1],
+                ),
             )
-            new_max_label_region_ids += new_max_label_region_ids0
-    else:
-        new_max_label_region_ids = max_label_region_ids
-
-    # split label into north and south
-    centroids = list(
-        map(
-            lambda region_id: ents.get_entity(region_id)['centroid'],
-            new_max_label_region_ids,
         )
-    )
-    pops = list(
-        map(
-            lambda region_id: (int)(ents.get_entity(region_id)['population']),
-            new_max_label_region_ids,
-        )
-    )
-    bounds = _utils.get_bounds(centroids)
 
-    min_cand_pop_div = None
-    max_north_region_ids = None
-    max_south_region_ids = None
-    max_north_label = None
-    max_south_label = None
+    min_split_total_pop = None
+    sel_low_region_ids = []
+    sel_high_region_ids = []
+    for search_meta in search_meta_list:
+        split_total_pop = 0
+        total_pop = 0
+        low_region_ids = []
+        high_region_ids = []
 
-    span_0 = bounds[1][0] - bounds[0][0]
-    span_1 = bounds[1][1] - bounds[0][1]
+        for e in search_meta['ents_sorted']:
+            pop = e['population']
+            total_pop += pop
+            if total_pop < split_point_pop:
+                low_region_ids.append(e['id'])
+                split_total_pop = total_pop
+            else:
+                high_region_ids.append(e['id'])
 
-    SPAN_K = 2
-    if span_0 > SPAN_K * span_1:
-        i_list = [0]
-    elif span_1 > SPAN_K * span_0:
-        i_list = [1]
-    else:
-        i_list = [0, 1]
+        if not min_split_total_pop or (
+            split_total_pop != 0 and split_total_pop < min_split_total_pop
+        ):
+            min_split_total_pop = split_total_pop
 
-    N_P = 40
-    for i in i_list:
-        prev_cand_pop_div = None
-        for p in [i_p / N_P for i_p in range(0, N_P + 1)]:
-            north_label = ['N', 'E'][i]
-            south_label = ['S', 'W'][i]
+            sel_low_prefix = search_meta['low_prefix']
+            sel_high_prefix = search_meta['high_prefix']
+            sel_low_region_ids = low_region_ids
+            sel_high_region_ids = high_region_ids
 
-            north_region_ids = []
-            south_region_ids = []
-            north_pop = 0
-            south_pop = 0
-            min_bound, max_bound = bounds[0][i], bounds[1][i]
-            for region_id, centroid, pop in zip(
-                new_max_label_region_ids, centroids, pops
-            ):
-                if centroid[i] > (min_bound + (max_bound - min_bound) * p):
-                    north_region_ids.append(region_id)
-                    north_pop += pop
-                else:
-                    south_region_ids.append(region_id)
-                    south_pop += pop
-            cand_pop = north_pop
-            cand_pop_div = abs(cand_pop - target_cand_pop)
-            if not min_cand_pop_div or min_cand_pop_div > cand_pop_div:
-                min_cand_pop_div = cand_pop_div
-                max_north_region_ids = north_region_ids
-                max_south_region_ids = south_region_ids
-                max_north_label = north_label
-                max_south_label = south_label
-            if prev_cand_pop_div and prev_cand_pop_div < cand_pop_div:
-                break
+    if not (high_region_ids and low_region_ids):
+        return None
 
-            prev_cand_pop_div = cand_pop_div
-
-    del new_label_to_region_ids[max_label]
+    new_label_to_region_ids = conf.get_label_to_region_ids()
+    del new_label_to_region_ids[split_label]
     new_label_to_region_ids[
-        max_label + '-' + max_north_label
-    ] = max_north_region_ids
+        split_label + '-' + sel_low_prefix
+    ] = sel_low_region_ids
     new_label_to_region_ids[
-        max_label + '-' + max_south_label
-    ] = max_south_region_ids
+        split_label + '-' + sel_high_prefix
+    ] = sel_high_region_ids
 
-    new_label_to_region_ids2 = {}
-    for label, region_ids in new_label_to_region_ids.items():
+    return Conf(
+        label_to_region_ids=new_label_to_region_ids,
+        total_seats=total_seats,
+    )
+
+
+def mutate_split_max_region(conf):
+    split_label = conf.get_max_region_label()
+    return split_region(conf, split_label)
+
+
+def rename_labels(conf):
+    old_label_to_region_ids = conf.get_label_to_region_ids()
+    new_label_to_region_ids = {}
+    for label, region_ids in old_label_to_region_ids.items():
         new_label = region_utils.get_label(label, region_ids)
-        new_label_to_region_ids2[new_label] = region_ids
+        new_label_to_region_ids[new_label] = region_ids
+    return Conf(
+        label_to_region_ids=new_label_to_region_ids,
+        total_seats=conf.get_total_seats(),
+    )
 
-    return Conf(conf.get_total_seats(), new_label_to_region_ids2)
+
+def split_region(conf, split_label):
+
+    while True:
+        log.info('split_region: %s', split_label)
+        split_label_region_ids = conf.get_label_to_region_ids()[split_label]
+        n_region_ids = len(split_label_region_ids)
+
+        if n_region_ids == 1:
+            conf = expand_region(conf, split_label)
+            continue
+
+        conf_tentative = split_region_tentative(conf, split_label)
+        if conf_tentative is None:
+            conf = expand_region(conf, split_label)
+            continue
+
+        return rename_labels(conf_tentative)
 
 
 def mutate_until_only_simple_member(conf, district_id):
-    _utils.print_json(conf.get_label_to_demo())
-    MAX_INTERATIONS = 100
+    MAX_INTERATIONS = 30
     is_complete = False
     for i in range(0, MAX_INTERATIONS):
 
         @log_time
         def inner(conf=conf, is_complete=is_complete):
             single_member_count = conf.get_single_member_count()
-            p_single_member_count = single_member_count / conf.__total_seats__
-            print('-' * 64)
-            print(f'{i}) {p_single_member_count:.0%} complete...')
-            print('-' * 64)
+            single_member_count / conf.__total_seats__
 
             if single_member_count == conf.__total_seats__:
                 map_name = f'{district_id}-FINAL'
@@ -193,9 +213,7 @@ def mutate_until_only_simple_member(conf, district_id):
         if is_complete:
             break
 
-    _utils.print_obj(conf.get_label_to_demo())
-    conf.print_stats()
-    _utils.print_obj(conf.get_l2g2d2s())
+    conf.log_stats()
     map_name = f'{district_id}-FINAL'
     conf_file = f'/tmp/sl_new_pds.{map_name}.json'
     Conf.write(conf_file, conf)
@@ -204,5 +222,5 @@ def mutate_until_only_simple_member(conf, district_id):
 if __name__ == '__main__':
     district_to_confs = Conf.get_district_to_confs(TOTAL_SEATS_SL)
 
-    for district_id, conf in list(district_to_confs.items())[0:1]:
+    for district_id, conf in list(district_to_confs.items())[2:3]:
         mutate_until_only_simple_member(conf, district_id)

@@ -18,14 +18,14 @@ for idx, row in gpd_df.iterrows():
         row['geometry'].centroid.x,
         row['geometry'].centroid.y,
     ]
-    plt.annotate(
+    plt.text(
         s=row['name'],
         xy=[x, y],
         horizontalalignment='center',
         fontsize=7,
     )
     population_k = row['population'] / 1_000
-    plt.annotate(
+    plt.text(
         s=f'{population_k:.3g}K',
         xy=[x, y + 0.004],
         horizontalalignment='center',

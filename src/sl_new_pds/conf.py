@@ -242,6 +242,14 @@ class Conf:
         total_pop = self.get_total_pop(self.get_label_to_pop())
         return total_pop / self.__total_seats__
 
+    def get_max_region_label(self):
+        """Get the label with the largest population."""
+        label_to_pop = self.get_label_to_pop()
+        sorted_label_and_pop = sorted(
+            label_to_pop.items(), key=lambda x: -x[1]
+        )
+        return sorted_label_and_pop[0][0]
+
     def copy(self):
         return Conf(_utils.dumb_copy(self.__label_to_region_ids__))
 
@@ -254,15 +262,13 @@ class Conf:
         )
 
     @log_time
-    def print_stats(self):
-        _utils.print_json(self.__label_to_region_ids__)
-        _utils.print_kv_dict(self.get_label_to_pop())
-        _utils.print_kv_dict(self.get_label_to_seats())
-
-        print('unfairness:\t%f' % self.get_unfairness())
-        print('multi-member:\t%d' % self.get_multi_member_count())
-        print('single-member:\t%d' % self.get_single_member_count())
-        print('zero-member:\t%d' % self.get_zero_member_count())
-        print('target pop-per-seat:\t %4.0f' % self.get_target_pop_per_seat())
-
-        print('-' * 64)
+    def log_stats(self):
+        log.info('-' * 64)
+        log.info('unfairness:\t%f', self.get_unfairness())
+        log.info('multi-member:\t%d', self.get_multi_member_count())
+        log.info('single-member:\t%d', self.get_single_member_count())
+        log.info('zero-member:\t%d', self.get_zero_member_count())
+        log.info(
+            'target pop-per-seat:\t %4.0f', self.get_target_pop_per_seat()
+        )
+        log.info('-' * 64)

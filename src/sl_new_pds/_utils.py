@@ -4,8 +4,17 @@ import json
 import logging
 import time
 
-logging.basicConfig(level=logging.INFO)
+from utils import sysx
+
 log = logging.getLogger('sl_new_pds')
+log.propagate = False
+syslog = logging.StreamHandler()
+formatter = logging.Formatter(
+    sysx.str_color('[%(levelname)s-%(name)s] %(message)s', color_code=37)
+)
+syslog.setFormatter(formatter)
+log.setLevel(level=logging.INFO)
+log.addHandler(syslog)
 
 
 def dumb_copy(x):
@@ -94,11 +103,12 @@ def print_obj(x, n_tabs=0):
 
 def log_time(method):
     def timed(*args, **kw):
+        log.info('STARTED %s', method.__name__)
         t_start = time.time()
         result = method(*args, **kw)
         t_end = time.time()
         dt = (t_end - t_start) * 1000
-        log.info(method.__name__ + ':\t' + str(dt) + 'ms')
+        log.info('COMPLETED %s in %dms', method.__name__, dt)
         return result
 
     return timed

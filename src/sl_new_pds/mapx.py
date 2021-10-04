@@ -44,7 +44,7 @@ def draw_map(
     map_name, label_to_region_ids, label_to_seats=None, label_to_pop=None
 ):
     all_gpd_df_list = []
-    for label, region_ids in label_to_region_ids.items():
+    for i_label, [label, region_ids] in enumerate(label_to_region_ids.items()):
         gpd_ds_list = []
         for region_id in region_ids:
             region_type = ent_types.get_entity_type(region_id)
@@ -62,6 +62,7 @@ def draw_map(
         gpd_df = gpd.GeoDataFrame()
         gpd_df['geometry'] = gpd_ds
         gpd_df['name'] = label
+        gpd_df['i_label'] = i_label
 
         seats = label_to_seats.get(label)
         gpd_df['seats'] = seats
@@ -88,31 +89,49 @@ def draw_map(
             row['geometry'].centroid.x,
             row['geometry'].centroid.y,
         ]
-        name_str = row['name']
-        if name_str[:3] != 'pd-':
-            name_str = ''
 
-        plt.annotate(
-            s=name_str,
-            xy=[x, y],
-            horizontalalignment='center',
-            fontsize=7,
-        )
-        population_k = row['population'] / 1_000
+        i_label = row['i_label']
+
+        population = row['population']
+        if population > 1_000_000:
+            population_m = population / 1_000_000
+            population_str = f'{population_m:.3g}M'
+        elif population > 1_000:
+            population_k = population / 1_000
+            population_str = f'{population_k:.3g}K'
+        else:
+            population_str = f'{population}'
+
         seats = row['seats']
         seats_str = ''
         if seats > 1:
             seats_str = f' ({seats})'
 
+        name = row['name']
+        label = '(%d) %s %s %s' % (
+            i_label + 1,
+            population_str,
+            name,
+            seats_str,
+        )
+        label_min = '(%d)' % (i_label + 1)
+
         plt.annotate(
-            s=f'{population_k:.3g}K {seats_str}',
-            xy=[x, y + 0.004],
-            horizontalalignment='center',
+            text=label_min,
+            xy=(x, y),
+            fontsize=12,
+        )
+
+        plt.annotate(
+            text=label,
+            xy=(24, 500 - i_label * 24),
+            xycoords='figure points',
             fontsize=9,
         )
 
     map_name_str = dt.to_kebab(map_name)
     image_file = f'/tmp/sl_new_pds.map.{map_name_str}.png'
+    plt.axis('off')
     plt.savefig(image_file)
     log.info(f'Wrote map to {image_file}')
     os.system(f'open -a firefox {image_file}')
