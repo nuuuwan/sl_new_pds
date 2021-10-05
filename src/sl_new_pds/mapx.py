@@ -13,6 +13,9 @@ from sl_new_pds._constants import IDEAL_POP_PER_SEAT
 from sl_new_pds._utils import log, log_time
 
 
+WIDTH = 20
+HEIGHT = 9 * WIDTH / 16
+
 def format_value(x):
     if x is None:
         return ''
@@ -119,7 +122,7 @@ def draw_map(
     all_gpd_df = pd.concat(all_gpd_df_list)
     all_gpd_df.plot(
         color=all_gpd_df['color'],
-        figsize=(16, 9),
+        figsize=(WIDTH, HEIGHT),
         edgecolor='white',
         linewidth=2,
     )
