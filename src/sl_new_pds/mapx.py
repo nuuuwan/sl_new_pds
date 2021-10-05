@@ -157,10 +157,22 @@ def draw_map(
         )
         label_min = '(%d)' % (i_label + 1)
 
+        name_str = name
+        if len(name_str) > 15:
+            name_str = name_str[:6] + '...' + name_str[-6:]
+
         plt.annotate(
             text=label_min,
-            xy=(x, y),
+            xy=(x, y + 0.008),
             fontsize=12,
+            ha='center',
+        )
+
+        plt.annotate(
+            text=name_str,
+            xy=(x, y - 0.008),
+            fontsize=9,
+            ha='center',
         )
 
         plt.annotate(
@@ -172,7 +184,7 @@ def draw_map(
 
     map_name_str = dt.to_kebab(map_name)
     image_file = f'/tmp/sl_new_pds.map.{map_name_str}.png'
-    plt.axis('off')
+
 
     plt.legend(
         handles=list(
@@ -185,9 +197,9 @@ def draw_map(
         )
     )
 
+    plt.axis('off')
     plt.savefig(image_file)
     log.info(f'Wrote map to {image_file}')
-    os.system(f'open -a firefox {image_file}')
     return image_file
 
 

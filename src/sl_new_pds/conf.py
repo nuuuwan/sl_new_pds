@@ -254,7 +254,7 @@ class Conf:
         return Conf(_utils.dumb_copy(self.__label_to_region_ids__))
 
     def draw_map(self, map_name):
-        mapx.draw_map(
+        return mapx.draw_map(
             map_name,
             self.get_label_to_region_ids(),
             self.get_label_to_seats(),

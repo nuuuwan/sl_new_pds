@@ -277,7 +277,7 @@ def mutate_until_only_simple_member(conf, ed_id):
 
             conf_file = f'/tmp/sl_new_pds.{map_name}.json'
             Conf.write(conf_file, conf)
-            conf.draw_map(map_name)
+            image_file = conf.draw_map(map_name)
             if is_complete:
                 return is_complete, conf
             return is_complete, mutate_split_max_region(conf)

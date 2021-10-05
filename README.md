@@ -62,3 +62,4 @@
   *  [2021-10-05 11:19AM] Thicker borders - Done
   *  [2021-10-05 11:24AM] Test Colombo
   *  [2021-10-05 12:03PM] Added Legend
+  *  [2021-10-05 07:09PM] Added name; Removed diplicate image print
