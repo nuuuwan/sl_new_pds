@@ -49,7 +49,7 @@ def split_region_tentative(conf, split_label):
     split_label_pop = label_to_pop[split_label]
     split_label_seats_r = total_seats * split_label_pop / total_pop
 
-    if split_label_seats_r < 2:
+    if split_label_seats_r < 3:
         split_label_seats_round = split_label_seats_r * 0.5
     else:
         split_label_seats_round = round(split_label_seats_r, 0)
@@ -88,7 +88,7 @@ def split_region_tentative(conf, split_label):
     lat_span, lng_span = max_lat - min_lat, max_lng - min_lng
 
     search_meta_list = []
-    LAT_LNG_SKEW = 1.01
+    LAT_LNG_SKEW = 1.5
     if LAT_LNG_SKEW * lng_span > lat_span:
         low_prefix = 'W'
         high_prefix = 'E'
