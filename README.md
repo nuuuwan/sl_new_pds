@@ -61,3 +61,4 @@
   *  [2021-10-05 11:07AM] Speeding up draw_map done
   *  [2021-10-05 11:19AM] Thicker borders - Done
   *  [2021-10-05 11:24AM] Test Colombo
+  *  [2021-10-05 12:03PM] Added Legend

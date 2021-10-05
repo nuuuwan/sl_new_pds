@@ -1,9 +1,8 @@
 import colorsys
-import math
 import os
-import random
 
 import geopandas as gpd
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import pandas as pd
 from geo import geodata
@@ -14,62 +13,66 @@ from utils import dt
 from sl_new_pds._constants import IDEAL_POP_PER_SEAT
 from sl_new_pds._utils import log, log_time
 
-LABEL_TO_COLOR = {}
+
+def format_value(x):
+    if x is None:
+        return ''
+    if x > 1_000_000:
+        x_m = x / 1_000_000
+        return f'{x_m:.0f}M'
+    if x > 1_000:
+        x_k = x / 1_000
+        return f'{x_k:.0f}K'
+    return f'{x}'
 
 
-def get_random_color():
-    return [random.random() * 0.5 + 0.5 for _ in range(0, 3)]
+def get_legend_item_list():
+    p_lower_bounds = [2, 3 / 2, 5 / 4, 4 / 5, 2 / 3, 1 / 2, None]
+    legend_item_list = []
+    upper_bound = None
+    i_middle = (int)(len(p_lower_bounds) / 2)
+    for i in range(0, len(p_lower_bounds)):
+        p_lower_bound = p_lower_bounds[i]
+
+        if p_lower_bound and p_lower_bound > 1:
+            h = 0
+            lightness = [0.55, 0.75, 0.95][i]
+        else:
+            h = 2.0 / 3
+            lightness = [0.95, 0.95, 0.75, 0.55][i - i_middle]
+
+        if i == i_middle:
+            s = 0
+        else:
+            s = 1
+
+        if p_lower_bound is not None:
+            lower_bound = IDEAL_POP_PER_SEAT * p_lower_bound
+        else:
+            lower_bound = None
+
+        label = format_value(lower_bound) + ' < ' + format_value(upper_bound)
+
+        legend_item_list.append(
+            {
+                'lower_bound': lower_bound,
+                'label': label,
+                'color': colorsys.hls_to_rgb(h, lightness, s),
+            }
+        )
+        upper_bound = lower_bound
+    return legend_item_list
 
 
-# @cache('sl_new_pds', timex.SECONDS_IN.YEAR)
-def get_label_color(label):
-    if label not in LABEL_TO_COLOR:
-        LABEL_TO_COLOR[label] = get_random_color()
-    return LABEL_TO_COLOR[label]
+LEGEND_ITEM_LIST = get_legend_item_list()
 
 
 def get_pop_color(pop):
-    pop_r = pop / IDEAL_POP_PER_SEAT
-    log_pop_r = math.log(pop_r) / math.log(2)
-    abs_log_pop_r = abs(log_pop_r)
-
-    h = 0 if (log_pop_r > 0) else 2 / 3
-
-    if abs_log_pop_r < 0.25:
-        s = 0
-        lightness = 0.9
-    else:
-        s = 1
-        if abs_log_pop_r > 1:
-            lightness = 0.5
-
-        elif abs_log_pop_r > 0.5:
-            lightness = 0.9
-
-        else:
-            lightness = 0.95
-
-    return colorsys.hls_to_rgb(h, lightness, s)
-
-
-def get_pop_color2(pop):
-    pop_r = pop / IDEAL_POP_PER_SEAT
-    log_pop_r = math.log(pop_r) / math.log(2)
-
-    abs_log_pop_r = min(abs(log_pop_r), 1)
-    P_POP_PER_SEAT_LIMIT = 0.25
-    log_limit = math.log(P_POP_PER_SEAT_LIMIT + 1) / math.log(2)
-
-    if abs_log_pop_r < log_limit:
-        return (0.8, 0.8, 0.8)
-
-    h = 0 if (log_pop_r > 0) else 2 / 3
-    lightness = 1 - 0.8 * (abs_log_pop_r - P_POP_PER_SEAT_LIMIT) / (
-        1 - P_POP_PER_SEAT_LIMIT
-    )
-    s = 1
-
-    return colorsys.hls_to_rgb(h, lightness, s)
+    for legend_item in LEGEND_ITEM_LIST:
+        lower_bound = legend_item['lower_bound']
+        if lower_bound is None or pop > lower_bound:
+            return legend_item['color']
+    return 'black'
 
 
 @log_time
@@ -170,6 +173,18 @@ def draw_map(
     map_name_str = dt.to_kebab(map_name)
     image_file = f'/tmp/sl_new_pds.map.{map_name_str}.png'
     plt.axis('off')
+
+    plt.legend(
+        handles=list(
+            map(
+                lambda legend_item: mpatches.Patch(
+                    color=legend_item['color'], label=legend_item['label']
+                ),
+                LEGEND_ITEM_LIST,
+            )
+        )
+    )
+
     plt.savefig(image_file)
     log.info(f'Wrote map to {image_file}')
     os.system(f'open -a firefox {image_file}')
