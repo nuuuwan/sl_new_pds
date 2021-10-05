@@ -12,9 +12,9 @@ from utils import dt
 from sl_new_pds._constants import IDEAL_POP_PER_SEAT
 from sl_new_pds._utils import log, log_time
 
-
 WIDTH = 20
 HEIGHT = 9 * WIDTH / 16
+
 
 def format_value(x):
     if x is None:

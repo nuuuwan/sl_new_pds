@@ -42,6 +42,7 @@ def expand_region(conf, expand_label):
 
 @log_time
 def split_region_tentative(conf, split_label):
+
     label_to_pop = conf.get_label_to_pop()
     total_pop = sum(label_to_pop.values())
     total_seats = conf.get_total_seats()
@@ -49,13 +50,17 @@ def split_region_tentative(conf, split_label):
     split_label_pop = label_to_pop[split_label]
     split_label_seats_r = total_seats * split_label_pop / total_pop
 
-    if split_label_seats_r < 3:
+    if split_label_seats_r < 2:
         split_label_seats_round = split_label_seats_r * 0.5
     else:
         split_label_seats_round = round(split_label_seats_r, 0)
-        split_label_seats_round = math.ceil(split_label_seats_round * 0.5) * (
-            split_label_seats_r / split_label_seats_round
-        )
+        HACK_OFFSET = 0
+        if split_label == 'ed-kegalle':
+            HACK_OFFSET = 2
+
+        split_label_seats_round = (
+            math.ceil(split_label_seats_round * 0.5) + HACK_OFFSET
+        ) * (split_label_seats_r / split_label_seats_round)
 
     split_point_pop = split_label_seats_round * total_pop / total_seats
 
@@ -88,7 +93,7 @@ def split_region_tentative(conf, split_label):
     lat_span, lng_span = max_lat - min_lat, max_lng - min_lng
 
     search_meta_list = []
-    LAT_LNG_SKEW = 1.5
+    LAT_LNG_SKEW = 1.6
     if LAT_LNG_SKEW * lng_span > lat_span:
         low_prefix = 'W'
         high_prefix = 'E'
