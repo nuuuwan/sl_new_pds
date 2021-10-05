@@ -71,7 +71,7 @@ def get_pop_color(pop):
         lower_bound = legend_item['lower_bound']
         if lower_bound is None or pop > lower_bound:
             return legend_item['color']
-    return 'black'
+    return 'white'
 
 
 @log_time
@@ -120,7 +120,7 @@ def draw_map(
     all_gpd_df.plot(
         color=all_gpd_df['color'],
         figsize=(16, 9),
-        edgecolor="white",
+        edgecolor='white',
         linewidth=2,
     )
 
@@ -145,36 +145,42 @@ def draw_map(
         seats = row['seats']
         seats_str = ''
         if seats > 1:
-            seats_str = f' ({seats})'
+            seats_str = f' ({seats} seats)'
 
         name = row['name']
-        label = '(%d) %s %s %s' % (
+        label = '[%d] %s %s %s' % (
             i_label + 1,
             population_str,
             name,
             seats_str,
         )
-        label_min = '(%d)' % (i_label + 1)
 
-        name_str = name
-        if len(name_str) > 15:
-            name_str = name_str[:6] + '...' + name_str[-6:]
-            name_str = name_str.title()
-            name_str = name_str.replace('Ed-', 'ED-')
-
+        i_label_str = '[%d]' % (i_label + 1)
         plt.annotate(
-            text=label_min,
-            xy=(x, y + 0.008),
-            fontsize=12,
-            ha='center',
-        )
-
-        plt.annotate(
-            text=name_str,
-            xy=(x, y - 0.008),
+            text=i_label_str,
+            xy=(x, y),
             fontsize=9,
             ha='center',
         )
+
+        # name_str = name
+        # name_str = name_str.title()
+        # name_str = name_str.replace('Ed-', 'ED-')
+        # if len(name_str) > 15:
+        #     name_str = name_str[:6] + '...' + name_str[-6:]
+        # plt.annotate(
+        #     text=name_str,
+        #     xy=(x, y),
+        #     fontsize=9,
+        #     ha='center',
+        # )
+        #
+        # plt.annotate(
+        #     text=population_str,
+        #     xy=(x, y - 0.03),
+        #     fontsize=12,
+        #     ha='center',
+        # )
 
         plt.annotate(
             text=label,
