@@ -82,6 +82,12 @@ def draw_map(
 
     for i_label, [label, region_ids] in enumerate(label_and_region_ids):
         print(i_label, label, len(region_ids))
+        region0_id = region_ids[0]
+        region0_type = ent_types.get_entity_type(region0_id)
+        gpd_df = geodata.get_all_geodata(region0_type)
+        gpd_df = gpd_df[gpd_df['id'].str.contains(''.join(region_ids))]
+        gpd_ds = gpd_df.explode()['geometry']
+
         gpd_ds_list = []
         for region_id in region_ids:
             region_type = ent_types.get_entity_type(region_id)

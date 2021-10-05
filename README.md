@@ -55,3 +55,4 @@
   *  [2021-10-05 09:51AM] Unknown
   *  [2021-10-05 09:51AM] Lint Python
   *  [2021-10-05 10:36AM] Added Logging
+  *  [2021-10-05 10:44AM] Paralell impl
