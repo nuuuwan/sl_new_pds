@@ -1,5 +1,4 @@
 import colorsys
-import os
 
 import geopandas as gpd
 import matplotlib.patches as mpatches
@@ -184,7 +183,6 @@ def draw_map(
 
     map_name_str = dt.to_kebab(map_name)
     image_file = f'/tmp/sl_new_pds.map.{map_name_str}.png'
-
 
     plt.legend(
         handles=list(

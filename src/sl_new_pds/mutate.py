@@ -1,4 +1,5 @@
 import math
+import os
 
 from gig import ent_types, ents
 
@@ -278,6 +279,7 @@ def mutate_until_only_simple_member(conf, ed_id):
             conf_file = f'/tmp/sl_new_pds.{map_name}.json'
             Conf.write(conf_file, conf)
             image_file = conf.draw_map(map_name)
+            os.system(f'open -a firefox {image_file}')
             if is_complete:
                 return is_complete, conf
             return is_complete, mutate_split_max_region(conf)
