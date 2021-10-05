@@ -81,6 +81,7 @@ def draw_map(
     )
 
     for i_label, [label, region_ids] in enumerate(label_and_region_ids):
+        print(i_label, label, len(region_ids))
         gpd_ds_list = []
         for region_id in region_ids:
             region_type = ent_types.get_entity_type(region_id)
