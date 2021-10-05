@@ -45,7 +45,7 @@ def get_pop_color(pop):
 
         elif abs_log_pop_r > 0.5:
             lightness = 0.9
-            
+
         else:
             lightness = 0.95
 
@@ -118,8 +118,8 @@ def draw_map(
     all_gpd_df.plot(
         color=all_gpd_df['color'],
         figsize=(16, 9),
-        edgecolor="black",
-        linewidth=1,
+        edgecolor="white",
+        linewidth=2,
     )
 
     for idx, row in all_gpd_df.iterrows():

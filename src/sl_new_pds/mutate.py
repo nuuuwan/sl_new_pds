@@ -218,6 +218,7 @@ def split_region_tentative(conf, split_label):
     )
 
 
+@log_time
 def mutate_split_max_region(conf):
     split_label = conf.get_max_region_label()
     return split_region(conf, split_label)
@@ -235,6 +236,7 @@ def rename_labels(conf):
     )
 
 
+@log_time
 def split_region(conf, split_label):
 
     while True:
@@ -254,6 +256,7 @@ def split_region(conf, split_label):
         return rename_labels(conf_tentative)
 
 
+@log_time
 def mutate_until_only_simple_member(conf, ed_id):
     draw_current.draw(ed_id)
 
@@ -283,7 +286,6 @@ def mutate_until_only_simple_member(conf, ed_id):
         if is_complete:
             break
 
-    conf.log_stats()
     map_name = f'{ed_id}-FINAL'
     conf_file = f'/tmp/sl_new_pds.{map_name}.json'
     Conf.write(conf_file, conf)
