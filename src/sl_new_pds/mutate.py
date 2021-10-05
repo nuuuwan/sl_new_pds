@@ -57,6 +57,8 @@ def split_region_tentative(conf, split_label):
         HACK_OFFSET = 0
         if split_label == 'ed-kegalle':
             HACK_OFFSET = 2
+        if split_label == 'ed-badulla':
+            HACK_OFFSET = 1
 
         split_label_seats_round = (
             math.ceil(split_label_seats_round * 0.5) + HACK_OFFSET
@@ -287,6 +289,6 @@ def mutate_until_only_simple_member(conf, ed_id):
 
 if __name__ == '__main__':
     district_to_confs = Conf.get_district_to_confs(TOTAL_SEATS_SL)
-    i = 1
+    i = 18
     for ed_id, conf in list(district_to_confs.items())[i: i + 1]:
         mutate_until_only_simple_member(conf, ed_id)

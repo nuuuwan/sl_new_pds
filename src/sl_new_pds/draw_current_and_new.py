@@ -5,9 +5,10 @@ from utils import dt
 from sl_new_pds import mapx
 from sl_new_pds._utils import log
 
-FIG_DPI = 150
-WIDTH = 1600
+WIDTH = 2400
 HEIGHT = 9 * WIDTH / 16
+
+FIG_DPI = 150
 WIDTH_INCH = WIDTH / FIG_DPI
 HEIGHT_INCH = HEIGHT / FIG_DPI
 
@@ -15,7 +16,7 @@ HEIGHT_INCH = HEIGHT / FIG_DPI
 def draw_current(ax_map, ax_text, ed_id):
 
     ed_ent = ents.get_entity(ed_id)
-    ed_label = dt.to_kebab(ed_id + ' ' + ed_ent['name'])
+    dt.to_kebab(ed_id + ' ' + ed_ent['name'])
 
     label_to_region_ids = {}
     label_to_pop = {}
@@ -68,8 +69,10 @@ def draw_current_and_new(
     label_to_seats,
     label_to_pop,
 ):
-    fig, axes = plt.subplots(ncols=3, nrows=2, figsize=(WIDTH_INCH, HEIGHT_INCH), dpi=FIG_DPI)
-    axes[1, 2].set_axis_off()
+    fig, axes = plt.subplots(
+        ncols=2, nrows=2, figsize=(WIDTH_INCH, HEIGHT_INCH), dpi=FIG_DPI
+    )
+    plt.tight_layout()
 
     draw_current(axes[0, 0], axes[1, 0], ed_id)
 
@@ -80,12 +83,10 @@ def draw_current_and_new(
         label_to_seats,
         label_to_pop,
     )
-    mapx.draw_legend(axes[0, 2])
+    mapx.draw_legend(axes[1, 0])
 
     image_file = f'/tmp/sl_new_pds.{map_name}.png'
     plt.savefig(image_file)
     log.info(f'Saved map to {image_file}')
-
-
 
     return image_file

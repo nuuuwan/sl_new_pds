@@ -2,17 +2,13 @@ import colorsys
 
 import geopandas as gpd
 import matplotlib.patches as mpatches
-import matplotlib.pyplot as plt
 import pandas as pd
 from geo import geodata
 from gig import ent_types
 from shapely.geometry import JOIN_STYLE
-from utils import dt
 
 from sl_new_pds._constants import IDEAL_POP_PER_SEAT
 from sl_new_pds._utils import log_time
-
-
 
 
 def format_value(x):
@@ -127,8 +123,8 @@ def draw_map(
     all_gpd_df.plot(
         ax=ax_map,
         color=all_gpd_df['color'],
-        edgecolor='white',
-        linewidth=2,
+        edgecolor='gray',
+        linewidth=1,
     )
 
     for idx, row in all_gpd_df.iterrows():
@@ -191,13 +187,13 @@ def draw_map(
 
         ax_text.annotate(
             text=label,
-            xy=(50, 150 - i_label * 12),
+            xy=(100, 170 - i_label * 10),
             xycoords='axes points',
-            fontsize=9,
+            fontsize=8,
         )
-        ax_map.annotate(
+        ax_text.annotate(
             text=title,
-            xy=(50, 150),
+            xy=(100, 190),
             xycoords='axes points',
             fontsize=12,
         )
@@ -215,6 +211,8 @@ def draw_legend(ax):
                 ),
                 LEGEND_ITEM_LIST,
             )
-        )
+        ),
+        loc='center right',
+        fontsize=12,
     )
     ax.set_axis_off()
