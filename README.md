@@ -58,3 +58,4 @@
   *  [2021-10-05 10:44AM] Paralell impl
   *  [2021-10-05 10:44AM] Paralell impl
   *  [2021-10-05 10:54AM] Fixed drawmap time
+  *  [2021-10-05 11:07AM] Speeding up draw_map done

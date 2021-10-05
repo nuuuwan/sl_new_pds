@@ -41,9 +41,11 @@ def get_pop_color(pop):
     else:
         s = 1
         if abs_log_pop_r > 1:
-            lightness = 0.25
+            lightness = 0.5
+
         elif abs_log_pop_r > 0.5:
-            lightness = 0.85
+            lightness = 0.9
+            
         else:
             lightness = 0.95
 
@@ -82,7 +84,6 @@ def draw_map(
     )
 
     for i_label, [label, region_ids] in enumerate(label_and_region_ids):
-        print(i_label, label, len(region_ids))
         region0_id = region_ids[0]
         region0_type = ent_types.get_entity_type(region0_id)
         gpd_df = geodata.get_all_geodata(region0_type)
@@ -122,7 +123,6 @@ def draw_map(
     )
 
     for idx, row in all_gpd_df.iterrows():
-        print(idx, row)
         [x, y] = [
             row['geometry'].centroid.x,
             row['geometry'].centroid.y,
