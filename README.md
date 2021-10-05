@@ -57,3 +57,4 @@
   *  [2021-10-05 10:36AM] Added Logging
   *  [2021-10-05 10:44AM] Paralell impl
   *  [2021-10-05 10:44AM] Paralell impl
+  *  [2021-10-05 10:54AM] Fixed drawmap time

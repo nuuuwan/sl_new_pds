@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from geo import geodata
 from gig import ent_types
+from shapely.geometry import JOIN_STYLE
 from utils import dt
 
 from sl_new_pds._constants import IDEAL_POP_PER_SEAT
@@ -85,19 +86,10 @@ def draw_map(
         region0_id = region_ids[0]
         region0_type = ent_types.get_entity_type(region0_id)
         gpd_df = geodata.get_all_geodata(region0_type)
-        gpd_df = gpd_df[gpd_df['id'].str.contains(''.join(region_ids))]
+        gpd_df = gpd_df[gpd_df['id'].str.contains('|'.join(region_ids))]
         gpd_ds = gpd_df.explode()['geometry']
-
-        # gpd_ds_list = []
-        # for region_id in region_ids:
-        #     region_type = ent_types.get_entity_type(region_id)
-        #     gpd_df = geodata.get_region_geodata(region_id, region_type)
-        #     gpd_ds_list.append(gpd_df.explode()['geometry'])
-        # gpd_ds = gpd.GeoSeries(pd.concat(gpd_ds_list).unary_union)
-        #
-        # from shapely.geometry import JOIN_STYLE
-        #
-        # eps = 0.0001
+        gpd_ds = gpd.GeoSeries(gpd_ds.unary_union)
+        eps = 0.0001
         gpd_ds = gpd_ds.buffer(eps, 1, join_style=JOIN_STYLE.mitre).buffer(
             -eps, 1, join_style=JOIN_STYLE.mitre
         )
@@ -130,6 +122,7 @@ def draw_map(
     )
 
     for idx, row in all_gpd_df.iterrows():
+        print(idx, row)
         [x, y] = [
             row['geometry'].centroid.x,
             row['geometry'].centroid.y,
@@ -187,11 +180,11 @@ if __name__ == '__main__':
     draw_map(
         map_name='New Electoral Districts',
         label_to_region_ids={
-            'Colombo North': [
-                'EC-01A',
-            ],
             'Colombo Central': [
                 'EC-01B',
+            ],
+            'Colombo North': [
+                'EC-01A',
             ],
             'Borella': [
                 'EC-01C',
@@ -202,24 +195,25 @@ if __name__ == '__main__':
             'Colombo West': [
                 'EC-01E',
             ],
-            'Kaduwela': [
-                'EC-01J',
+            'Maharagama & Homagama': [
+                'EC-01L',
+                'EC-01M',
             ],
         },
         label_to_seats={
-            'Colombo North': 1,
             'Colombo Central': 1,
+            'Colombo North': 1,
             'Borella': 1,
             'Colombo East': 1,
             'Colombo West': 1,
-            'Kaduwela': 1,
+            'Maharagama & Homagama': 1 + 1,
         },
         label_to_pop={
-            'Colombo North': 121603,
             'Colombo Central': 201620,
+            'Colombo North': 121603,
             'Borella': 89806,
             'Colombo East': 93260,
             'Colombo West': 54682,
-            'Kaduwela': 252041,
+            'Maharagama & Homagama': 237905 + 196423,
         },
     )
