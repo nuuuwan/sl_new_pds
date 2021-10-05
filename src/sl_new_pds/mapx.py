@@ -159,6 +159,8 @@ def draw_map(
         name_str = name
         if len(name_str) > 15:
             name_str = name_str[:6] + '...' + name_str[-6:]
+            name_str = name_str.title()
+            name_str = name_str.replace('Ed-', 'ED-')
 
         plt.annotate(
             text=label_min,

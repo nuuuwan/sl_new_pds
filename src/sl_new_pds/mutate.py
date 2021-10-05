@@ -180,7 +180,7 @@ def split_region_tentative(conf, split_label):
         asym = max_cum_pop_seats_r / min_cum_pop_seats_r
     else:
         asym = 0
-        
+
     MAX_ASYM = 1.5
     if min_cum_pop_seats_r < SEAT_LIMIT and asym > MAX_ASYM:
         first_region_id = region_ids[0]
@@ -284,6 +284,6 @@ def mutate_until_only_simple_member(conf, ed_id):
 
 if __name__ == '__main__':
     district_to_confs = Conf.get_district_to_confs(TOTAL_SEATS_SL)
-    i = 0
+    i = 6
     for ed_id, conf in list(district_to_confs.items())[i: i + 1]:
         mutate_until_only_simple_member(conf, ed_id)
