@@ -10,10 +10,9 @@ from shapely.geometry import JOIN_STYLE
 from utils import dt
 
 from sl_new_pds._constants import IDEAL_POP_PER_SEAT
-from sl_new_pds._utils import log, log_time
+from sl_new_pds._utils import log_time
 
-WIDTH = 20
-HEIGHT = 9 * WIDTH / 16
+
 
 
 def format_value(x):
@@ -79,7 +78,12 @@ def get_pop_color(pop):
 
 @log_time
 def draw_map(
-    map_name, label_to_region_ids, label_to_seats=None, label_to_pop=None
+    ax_map,
+    ax_text,
+    title,
+    label_to_region_ids,
+    label_to_seats=None,
+    label_to_pop=None,
 ):
     all_gpd_df_list = []
 
@@ -121,8 +125,8 @@ def draw_map(
 
     all_gpd_df = pd.concat(all_gpd_df_list)
     all_gpd_df.plot(
+        ax=ax_map,
         color=all_gpd_df['color'],
-        figsize=(WIDTH, HEIGHT),
         edgecolor='white',
         linewidth=2,
     )
@@ -159,10 +163,10 @@ def draw_map(
         )
 
         i_label_str = '[%d]' % (i_label + 1)
-        plt.annotate(
+        ax_map.annotate(
             text=i_label_str,
             xy=(x, y),
-            fontsize=9,
+            fontsize=6,
             ha='center',
         )
 
@@ -185,17 +189,25 @@ def draw_map(
         #     ha='center',
         # )
 
-        plt.annotate(
+        ax_text.annotate(
             text=label,
-            xy=(24, 500 - i_label * 24),
-            xycoords='figure points',
+            xy=(50, 150 - i_label * 12),
+            xycoords='axes points',
             fontsize=9,
         )
+        ax_map.annotate(
+            text=title,
+            xy=(50, 150),
+            xycoords='axes points',
+            fontsize=12,
+        )
 
-    map_name_str = dt.to_kebab(map_name)
-    image_file = f'/tmp/sl_new_pds.map.{map_name_str}.png'
+    ax_map.set_axis_off()
+    ax_text.set_axis_off()
 
-    plt.legend(
+
+def draw_legend(ax):
+    ax.legend(
         handles=list(
             map(
                 lambda legend_item: mpatches.Patch(
@@ -205,51 +217,4 @@ def draw_map(
             )
         )
     )
-
-    plt.axis('off')
-    plt.savefig(image_file)
-    log.info(f'Wrote map to {image_file}')
-    return image_file
-
-
-if __name__ == '__main__':
-    draw_map(
-        map_name='New Electoral Districts',
-        label_to_region_ids={
-            'Colombo Central': [
-                'EC-01B',
-            ],
-            'Colombo North': [
-                'EC-01A',
-            ],
-            'Borella': [
-                'EC-01C',
-            ],
-            'Colombo East': [
-                'EC-01D',
-            ],
-            'Colombo West': [
-                'EC-01E',
-            ],
-            'Maharagama & Homagama': [
-                'EC-01L',
-                'EC-01M',
-            ],
-        },
-        label_to_seats={
-            'Colombo Central': 1,
-            'Colombo North': 1,
-            'Borella': 1,
-            'Colombo East': 1,
-            'Colombo West': 1,
-            'Maharagama & Homagama': 1 + 1,
-        },
-        label_to_pop={
-            'Colombo Central': 201620,
-            'Colombo North': 121603,
-            'Borella': 89806,
-            'Colombo East': 93260,
-            'Colombo West': 54682,
-            'Maharagama & Homagama': 237905 + 196423,
-        },
-    )
+    ax.set_axis_off()

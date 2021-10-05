@@ -4,9 +4,10 @@ import math
 from gig import ents, ext_data
 from utils import dt, jsonx
 
-from sl_new_pds import _utils, mapx, seat_utils
+from sl_new_pds import _utils, seat_utils
 from sl_new_pds._constants import START_TYPE
 from sl_new_pds._utils import log, log_time
+from sl_new_pds.draw_current_and_new import draw_current_and_new
 
 
 class Conf:
@@ -253,8 +254,9 @@ class Conf:
     def copy(self):
         return Conf(_utils.dumb_copy(self.__label_to_region_ids__))
 
-    def draw_map(self, map_name):
-        return mapx.draw_map(
+    def draw_map(self, ed_id, map_name):
+        return draw_current_and_new(
+            ed_id,
             map_name,
             self.get_label_to_region_ids(),
             self.get_label_to_seats(),

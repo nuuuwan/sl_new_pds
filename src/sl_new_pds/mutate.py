@@ -3,7 +3,7 @@ import os
 
 from gig import ent_types, ents
 
-from sl_new_pds import _utils, draw_current, region_utils
+from sl_new_pds import _utils, region_utils
 from sl_new_pds._constants import PARENT_TO_CHILD_TYPE, TOTAL_SEATS_SL
 from sl_new_pds._utils import log, log_time
 from sl_new_pds.conf import Conf
@@ -253,8 +253,6 @@ def split_region(conf, split_label):
 
 @log_time
 def mutate_until_only_simple_member(conf, ed_id):
-    draw_current.draw(ed_id)
-
     MAX_ITERS = 30
     is_complete = False
     for i in range(0, MAX_ITERS):
@@ -272,7 +270,7 @@ def mutate_until_only_simple_member(conf, ed_id):
 
             conf_file = f'/tmp/sl_new_pds.{map_name}.json'
             Conf.write(conf_file, conf)
-            image_file = conf.draw_map(map_name)
+            image_file = conf.draw_map(ed_id, map_name)
             os.system(f'open -a firefox {image_file}')
             if is_complete:
                 return is_complete, conf
