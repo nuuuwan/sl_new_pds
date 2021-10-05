@@ -260,9 +260,9 @@ def split_region(conf, split_label):
 def mutate_until_only_simple_member(conf, ed_id):
     draw_current.draw(ed_id)
 
-    MAX_INTERATIONS = 30
+    MAX_ITERS = 30
     is_complete = False
-    for i in range(0, MAX_INTERATIONS):
+    for i in range(0, MAX_ITERS):
 
         @log_time
         def inner(conf=conf, is_complete=is_complete):
@@ -293,6 +293,6 @@ def mutate_until_only_simple_member(conf, ed_id):
 
 if __name__ == '__main__':
     district_to_confs = Conf.get_district_to_confs(TOTAL_SEATS_SL)
-    i = 2
+    i = 0
     for ed_id, conf in list(district_to_confs.items())[i: i + 1]:
         mutate_until_only_simple_member(conf, ed_id)
