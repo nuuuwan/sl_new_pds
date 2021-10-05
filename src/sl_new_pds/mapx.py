@@ -88,16 +88,16 @@ def draw_map(
         gpd_df = gpd_df[gpd_df['id'].str.contains(''.join(region_ids))]
         gpd_ds = gpd_df.explode()['geometry']
 
-        gpd_ds_list = []
-        for region_id in region_ids:
-            region_type = ent_types.get_entity_type(region_id)
-            gpd_df = geodata.get_region_geodata(region_id, region_type)
-            gpd_ds_list.append(gpd_df.explode()['geometry'])
-        gpd_ds = gpd.GeoSeries(pd.concat(gpd_ds_list).unary_union)
-
-        from shapely.geometry import JOIN_STYLE
-
-        eps = 0.0001
+        # gpd_ds_list = []
+        # for region_id in region_ids:
+        #     region_type = ent_types.get_entity_type(region_id)
+        #     gpd_df = geodata.get_region_geodata(region_id, region_type)
+        #     gpd_ds_list.append(gpd_df.explode()['geometry'])
+        # gpd_ds = gpd.GeoSeries(pd.concat(gpd_ds_list).unary_union)
+        #
+        # from shapely.geometry import JOIN_STYLE
+        #
+        # eps = 0.0001
         gpd_ds = gpd_ds.buffer(eps, 1, join_style=JOIN_STYLE.mitre).buffer(
             -eps, 1, join_style=JOIN_STYLE.mitre
         )
