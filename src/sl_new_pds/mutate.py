@@ -180,18 +180,7 @@ def split_region_tentative(conf, split_label):
         asym = max_cum_pop_seats_r / min_cum_pop_seats_r
     else:
         asym = 0
-
-    print(
-        split_label,
-        max_split_cum_pop,
-        pop_div,
-        min_cum_pop_seats_r,
-        max_cum_pop_seats_r,
-        asym,
-        sel_low_region_ids[:10],
-        sel_high_region_ids[:10],
-    )
-
+        
     MAX_ASYM = 1.5
     if min_cum_pop_seats_r < SEAT_LIMIT and asym > MAX_ASYM:
         first_region_id = region_ids[0]
