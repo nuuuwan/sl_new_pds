@@ -1,6 +1,8 @@
+import math
+
 from gig import ent_types, ents
 
-from sl_new_pds import _utils, region_utils
+from sl_new_pds import _utils, draw_current, region_utils
 from sl_new_pds._constants import PARENT_TO_CHILD_TYPE, TOTAL_SEATS_SL
 from sl_new_pds._utils import log, log_time
 from sl_new_pds.conf import Conf
@@ -50,7 +52,7 @@ def split_region_tentative(conf, split_label):
         split_label_seats_round = split_label_seats_r * 0.5
     else:
         split_label_seats_round = round(split_label_seats_r, 0)
-        split_label_seats_round = (int)(split_label_seats_round * 0.5) * (
+        split_label_seats_round = math.ceil(split_label_seats_round * 0.5) * (
             split_label_seats_r / split_label_seats_round
         )
 
@@ -85,7 +87,7 @@ def split_region_tentative(conf, split_label):
     lat_span, lng_span = max_lat - min_lat, max_lng - min_lng
 
     search_meta_list = []
-    LAT_LNG_SKEW = 1.25
+    LAT_LNG_SKEW = 1.5
     if LAT_LNG_SKEW * lng_span > lat_span:
         low_prefix = 'W'
         high_prefix = 'E'
@@ -130,58 +132,75 @@ def split_region_tentative(conf, split_label):
             )
         )
 
-    min_split_cum_pop = None
+    def get_pop_div(pop):
+        return abs(pop - split_point_pop)
+
+    min_pop_div = None
     sel_low_region_ids = []
     sel_high_region_ids = []
+
     for search_meta in search_meta_list:
         split_cum_pop = 0
         cum_pop = 0
         low_region_ids = []
         high_region_ids = []
 
+        prev_pop_div = None
+        split_pop_div = None
         for e in search_meta['ents_sorted']:
             pop = e['population']
             cum_pop += pop
-            if cum_pop < split_point_pop:
+            pop_div = get_pop_div(cum_pop)
+            if prev_pop_div is None or (pop_div < prev_pop_div):
                 low_region_ids.append(e['id'])
                 split_cum_pop = cum_pop
+                split_pop_div = pop_div
             else:
                 high_region_ids.append(e['id'])
+            prev_pop_div = pop_div
 
-        if not min_split_cum_pop or (
-            split_cum_pop != 0 and split_cum_pop < min_split_cum_pop
-        ):
-            min_split_cum_pop = split_cum_pop
-
+        if not min_pop_div or split_pop_div < min_pop_div:
+            min_pop_div = split_pop_div
+            max_split_cum_pop = split_cum_pop
             sel_low_prefix = search_meta['low_prefix']
             sel_high_prefix = search_meta['high_prefix']
             sel_low_region_ids = low_region_ids
             sel_high_region_ids = high_region_ids
 
-    split_cum_pop_seats_r = split_cum_pop * total_seats / total_pop
+    split_cum_pop_seats_r = max_split_cum_pop * total_seats / total_pop
     rev_split_cum_pop_seats_r = (
-        (split_label_pop - split_cum_pop) * total_seats / total_pop
+        (split_label_pop - max_split_cum_pop) * total_seats / total_pop
     )
 
-    SEAT_LIMIT = 0.9
+    SEAT_LIMIT = 0.76
+    min_cum_pop_seats_r = min(split_cum_pop_seats_r, rev_split_cum_pop_seats_r)
+    max_cum_pop_seats_r = max(split_cum_pop_seats_r, rev_split_cum_pop_seats_r)
+    if min_cum_pop_seats_r > 0:
+        asym = max_cum_pop_seats_r / min_cum_pop_seats_r
+    else:
+        asym = 0
+
     print(
         split_label,
-        split_cum_pop,
-        split_cum_pop_seats_r,
-        rev_split_cum_pop_seats_r,
-        SEAT_LIMIT,
+        max_split_cum_pop,
+        pop_div,
+        min_cum_pop_seats_r,
+        max_cum_pop_seats_r,
+        asym,
+        sel_low_region_ids[:10],
+        sel_high_region_ids[:10],
     )
 
-    if (
-        split_cum_pop_seats_r < SEAT_LIMIT
-        or rev_split_cum_pop_seats_r < SEAT_LIMIT
-    ):
+    MAX_ASYM = 1.5
+    if min_cum_pop_seats_r < SEAT_LIMIT and asym > MAX_ASYM:
         first_region_id = region_ids[0]
         first_region_id_type = ent_types.get_entity_type(first_region_id)
         if PARENT_TO_CHILD_TYPE.get(first_region_id_type):
+            print('split_region_tentative: FAILED (limit/asym)')
             return None
 
-    if not (high_region_ids and low_region_ids):
+    if not (sel_low_region_ids and sel_high_region_ids):
+        print('split_region_tentative: FAILED (empty)')
         return None
 
     new_label_to_region_ids = conf.get_label_to_region_ids()
@@ -235,7 +254,9 @@ def split_region(conf, split_label):
         return rename_labels(conf_tentative)
 
 
-def mutate_until_only_simple_member(conf, district_id):
+def mutate_until_only_simple_member(conf, ed_id):
+    draw_current.draw(ed_id)
+
     MAX_INTERATIONS = 30
     is_complete = False
     for i in range(0, MAX_INTERATIONS):
@@ -246,10 +267,10 @@ def mutate_until_only_simple_member(conf, district_id):
             single_member_count / conf.__total_seats__
 
             if single_member_count == conf.__total_seats__:
-                map_name = f'{district_id}-FINAL'
+                map_name = f'{ed_id}-FINAL'
                 is_complete = True
             else:
-                map_name = f'{district_id}-{i}'
+                map_name = f'{ed_id}-{i}'
 
             conf_file = f'/tmp/sl_new_pds.{map_name}.json'
             Conf.write(conf_file, conf)
@@ -263,13 +284,13 @@ def mutate_until_only_simple_member(conf, district_id):
             break
 
     conf.log_stats()
-    map_name = f'{district_id}-FINAL'
+    map_name = f'{ed_id}-FINAL'
     conf_file = f'/tmp/sl_new_pds.{map_name}.json'
     Conf.write(conf_file, conf)
 
 
 if __name__ == '__main__':
     district_to_confs = Conf.get_district_to_confs(TOTAL_SEATS_SL)
-
-    for district_id, conf in list(district_to_confs.items())[5:6]:
-        mutate_until_only_simple_member(conf, district_id)
+    i = 2
+    for ed_id, conf in list(district_to_confs.items())[i: i + 1]:
+        mutate_until_only_simple_member(conf, ed_id)
