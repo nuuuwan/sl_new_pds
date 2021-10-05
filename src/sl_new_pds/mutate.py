@@ -88,7 +88,7 @@ def split_region_tentative(conf, split_label):
     lat_span, lng_span = max_lat - min_lat, max_lng - min_lng
 
     search_meta_list = []
-    LAT_LNG_SKEW = 1.5
+    LAT_LNG_SKEW = 1.01
     if LAT_LNG_SKEW * lng_span > lat_span:
         low_prefix = 'W'
         high_prefix = 'E'
