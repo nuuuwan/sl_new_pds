@@ -69,3 +69,4 @@
   *  [2021-10-05 07:12PM] Named to title case
   *  [2021-10-05 07:32PM] Unknown
   *  [2021-10-05 07:32PM] Unknown
+  *  [2021-10-05 07:33PM] Added name; Removed diplicate image print
