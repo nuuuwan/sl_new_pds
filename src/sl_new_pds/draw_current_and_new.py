@@ -71,6 +71,9 @@ def draw_current_and_new(
     label_to_seats,
     label_to_pop,
 ):
+    ed_ent = ents.get_entity(ed_id)
+    ed_name = ed_ent['name']
+
     fig, axes = plt.subplots(
         ncols=5,
         figsize=(WIDTH_INCH, HEIGHT_INCH),
@@ -91,6 +94,27 @@ def draw_current_and_new(
         label_to_pop,
     )
     mapx.draw_legend(axes[4])
+    axes[2].text(
+        0,
+        0.97,
+        f'{ed_name} Electoral District ({ed_id})',
+        fontsize=12,
+        ha='center',
+    )
+    axes[2].text(
+        0,
+        0.92,
+        'Current and New (Proposed) Electorates',
+        fontsize=24,
+        ha='center',
+    )
+    axes[2].text(
+        0,
+        0.05,
+        'Data from elections.gov.lk • Visualizations & Analysis by @nuuuwan',
+        fontsize=8,
+        ha='center',
+    )
 
     image_file = f'/tmp/sl_new_pds.{map_name}.png'
     plt.savefig(image_file)

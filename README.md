@@ -80,3 +80,4 @@
   *  [2021-10-06 07:41AM] Made Variable Sized Subplots
   *  [2021-10-06 07:42AM] Made Variable Sized Subplots
   *  [2021-10-06 08:25AM] layout ok
+  *  [2021-10-06 08:36AM] Looking nice; Titles and Footer
