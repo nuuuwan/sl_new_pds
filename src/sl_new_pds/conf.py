@@ -283,4 +283,3 @@ if __name__ == '__main__':
         conf = Conf.read(f'/tmp/sl_new_pds.{map_name}.json')
         image_file = conf.draw_map(ed_id, map_name)
         os.system(f'open -a firefox {image_file}')
-        break
