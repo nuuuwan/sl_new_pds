@@ -15,6 +15,17 @@ EDGE_WIDTH = 1
 ALPHA = 0.75
 
 
+def to_unkebab(x):
+    return ' '.join(
+        list(
+            map(
+                lambda xi: xi.title(),
+                x.split('-'),
+            )
+        )
+    )
+
+
 def format_value(x):
     if x is None:
         return ''
@@ -77,7 +88,25 @@ def get_pop_color(pop):
 
 
 def get_short_name(name):
-    return (name[0] + name[-2:]).upper()
+    name = name.replace('-', ' ').upper()
+    words = name.split(' ')
+    n_words = len(words)
+
+    new_words = []
+    if n_words == 1:
+        new_words += [words[0][:5]]
+    elif n_words == 2:
+        new_words += [
+            words[0][:3],
+            words[1][:1],
+        ]
+    else:
+        new_words += [
+            words[0][:1],
+            words[-2][:1],
+            words[-1][:1],
+        ]
+    return '-'.join(new_words)
 
 
 @log_time
@@ -137,6 +166,14 @@ def draw_map(
         alpha=ALPHA,
     )
 
+    x0, y0 = 0.2, 1 - 0.2
+    ax_text.annotate(
+        text=title.title(),
+        xy=(x0, y0),
+        xycoords='axes fraction',
+        fontsize=12,
+    )
+
     for idx, row in all_gpd_df.iterrows():
         [x, y] = [
             row['geometry'].centroid.x,
@@ -161,19 +198,20 @@ def draw_map(
             seats_str = f' ({seats} seats)'
 
         name = row['name']
-        i_label_str = '[%s]' % get_short_name(name)
+        short_name = get_short_name(name)
+        print(short_name)
 
-        label = '%s %s %s %s' % (
-            i_label_str,
+        label = '[%s] %s %s %s' % (
+            short_name,
             population_str,
-            name,
+            to_unkebab(name),
             seats_str,
         )
 
         ax_map.annotate(
-            text=i_label_str,
+            text=short_name,
             xy=(x, y),
-            fontsize=12,
+            fontsize=7,
             ha='center',
         )
 
@@ -196,18 +234,11 @@ def draw_map(
         #     ha='center',
         # )
 
-        x0, y0 = 0.2, 1 - 0.2
-        ax_text.annotate(
-            text=title.title(),
-            xy=(x0, y0),
-            xycoords='axes fraction',
-            fontsize=12,
-        )
         ax_text.annotate(
             text=label,
-            xy=(x0, y0 - (i_label + 1) * 0.02),
+            xy=(x0, y0 - (i_label + 1.25 + (int)(i_label / 5)) * 0.027),
             xycoords='axes fraction',
-            fontsize=9,
+            fontsize=7,
         )
 
     ax_map.set_axis_off()

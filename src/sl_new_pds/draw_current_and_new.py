@@ -79,7 +79,7 @@ def draw_current_and_new(
         figsize=(WIDTH_INCH, HEIGHT_INCH),
         dpi=FIG_DPI,
         gridspec_kw={
-            'width_ratios': [1, 5, 1, 5, 1],
+            'width_ratios': [1, 6, 1, 6, 1],
         },
     )
     plt.tight_layout()

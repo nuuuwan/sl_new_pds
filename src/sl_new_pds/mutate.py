@@ -291,6 +291,6 @@ def mutate_until_only_simple_member(conf, ed_id):
 
 if __name__ == '__main__':
     district_to_confs = Conf.get_district_to_confs(TOTAL_SEATS_SL)
-    i = 0
-    for ed_id, conf in list(district_to_confs.items())[i: i + 1]:
+    # i = 0
+    for ed_id, conf in list(district_to_confs.items()):
         mutate_until_only_simple_member(conf, ed_id)
