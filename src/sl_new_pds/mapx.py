@@ -18,10 +18,13 @@ ALPHA = 1.0
 def get_seats_color(seats_by_pop, seats_actual):
     diff = seats_actual - seats_by_pop
     diff = max(min(diff, 1), -1)
-    h = (1.0 / 2) if (diff > 0) else (0)
+    COLOR_POSITIVE = 210 / 360
+    COLOR_NEGATIVE = 0
+    h = (COLOR_POSITIVE) if (diff > 0) else (COLOR_NEGATIVE)
     s = 1.0
     MAX_DIFF_LIGHT = 0.4
-    light = 1 - abs(diff) * (1 - MAX_DIFF_LIGHT)
+    q_light = abs(diff) ** 2
+    light = 1 - q_light * (1 - MAX_DIFF_LIGHT)
     return colorsys.hls_to_rgb(h, light, s)
 
 

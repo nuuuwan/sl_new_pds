@@ -130,6 +130,6 @@ def to_unkebab(x):
 def get_fore_color_for_back(back_color):
     r, g, b = back_color[:3]
     _, lightness, _ = colorsys.rgb_to_hls(r, g, b)
-    if lightness < 0.4:
+    if lightness < 0.6:
         return 'white'
     return 'black'
