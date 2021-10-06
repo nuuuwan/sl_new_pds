@@ -8,87 +8,71 @@ from gig import ent_types
 from shapely.geometry import JOIN_STYLE
 
 from sl_new_pds._constants import IDEAL_POP_PER_SEAT
-from sl_new_pds._utils import log_time
+from sl_new_pds._utils import get_fore_color_for_back, log_time, to_unkebab
 
 EDGE_COLOR = 'gray'
 EDGE_WIDTH = 1
 ALPHA = 0.75
 
 
-def to_unkebab(x):
-    return ' '.join(
-        list(
-            map(
-                lambda xi: xi.title(),
-                x.split('-'),
-            )
-        )
-    )
-
-
 def format_value(x):
     if x is None:
         return ''
-    if x > 1_000_000:
-        x_m = x / 1_000_000
-        return f'{x_m:.0f}M'
-    if x > 1_000:
-        x_k = x / 1_000
-        return f'{x_k:.0f}K'
-    return f'{x}'
+    return f'{x:+.1f} seats'
 
 
 def get_legend_item_list():
-    p_lower_bounds = [2, 3 / 2, 5 / 4, 4 / 5, 2 / 3, 1 / 2, None]
+    p_lower_bounds = [1, 0.5, 0.2, -0.2, -0.5, -1, None]
     legend_item_list = []
-    upper_bound = None
+    p_upper_bound = None
     i_middle = (int)(len(p_lower_bounds) / 2)
     for i in range(0, len(p_lower_bounds)):
         p_lower_bound = p_lower_bounds[i]
 
-        if p_lower_bound and p_lower_bound > 1:
+        if p_lower_bound and p_lower_bound > 0:
             h = 0
             lightness = [0.55, 0.75, 0.95][i]
         else:
             h = 2.0 / 3
-            lightness = [0.95, 0.95, 0.75, 0.55][i - i_middle]
+            lightness = [0.75, 0.95, 0.75, 0.55][i - i_middle]
 
         if i == i_middle:
             s = 0
         else:
             s = 1
 
-        if p_lower_bound is not None:
-            lower_bound = IDEAL_POP_PER_SEAT * p_lower_bound
-        else:
-            lower_bound = None
-
-        label = format_value(lower_bound) + ' < ' + format_value(upper_bound)
+        label = (
+            format_value(p_lower_bound) + ' < ' + format_value(p_upper_bound)
+        )
 
         legend_item_list.append(
             {
-                'lower_bound': lower_bound,
+                'p_lower_bound': p_lower_bound,
+                'p_upper_bound': p_upper_bound,
                 'label': label,
                 'color': colorsys.hls_to_rgb(h, lightness, s),
             }
         )
-        upper_bound = lower_bound
+        p_upper_bound = p_lower_bound
     return legend_item_list
 
 
 LEGEND_ITEM_LIST = get_legend_item_list()
 
 
-def get_pop_color(pop):
+def get_seats_color(seats_by_pop, seats_actual):
+    diff = seats_by_pop - seats_actual
+
     for legend_item in LEGEND_ITEM_LIST:
-        lower_bound = legend_item['lower_bound']
-        if lower_bound is None or pop > lower_bound:
+        p_lower_bound = legend_item['p_lower_bound']
+        if p_lower_bound is None or diff > p_lower_bound:
             return legend_item['color']
-    return 'white'
+    return 'green'
 
 
 def get_short_name(name):
     name = name.replace('-', ' ').upper()
+    name = name.replace('ED ', '')
     words = name.split(' ')
     n_words = len(words)
 
@@ -150,23 +134,27 @@ def draw_map(
         gpd_df['population'] = pop
 
         gpd_df['population_per_seat'] = gpd_df['population'] / gpd_df['seats']
+        gpd_df['seats_r'] = gpd_df['population'] / gpd_df['seats']
 
-        gpd_df['color'] = gpd_df['population_per_seat'].map(
-            lambda population_per_seat: get_pop_color(population_per_seat)
+        gpd_df['color'] = gpd_df['population'].map(
+            lambda population: get_seats_color(
+                population / IDEAL_POP_PER_SEAT, seats
+            )
         )
 
         all_gpd_df_list.append(gpd_df)
 
     all_gpd_df = pd.concat(all_gpd_df_list)
+    back_color = all_gpd_df['color']
     all_gpd_df.plot(
         ax=ax_map,
-        color=all_gpd_df['color'],
+        color=back_color,
         edgecolor=EDGE_COLOR,
         linewidth=EDGE_WIDTH,
         alpha=ALPHA,
     )
 
-    x0, y0 = 0.2, 1 - 0.2
+    x0, y0 = 0.05, 1 - 0.2
     ax_text.annotate(
         text=title.title(),
         xy=(x0, y0),
@@ -199,7 +187,6 @@ def draw_map(
 
         name = row['name']
         short_name = get_short_name(name)
-        print(short_name)
 
         label = '[%s] %s %s %s' % (
             short_name,
@@ -208,37 +195,20 @@ def draw_map(
             seats_str,
         )
 
+        seats_r = population / IDEAL_POP_PER_SEAT
         ax_map.annotate(
             text=short_name,
             xy=(x, y),
-            fontsize=7,
+            fontsize=5,
             ha='center',
+            color=get_fore_color_for_back(get_seats_color(seats_r, seats)),
         )
-
-        # name_str = name
-        # name_str = name_str.title()
-        # name_str = name_str.replace('Ed-', 'ED-')
-        # if len(name_str) > 15:
-        #     name_str = name_str[:6] + '...' + name_str[-6:]
-        # plt.annotate(
-        #     text=name_str,
-        #     xy=(x, y),
-        #     fontsize=9,
-        #     ha='center',
-        # )
-        #
-        # plt.annotate(
-        #     text=population_str,
-        #     xy=(x, y - 0.03),
-        #     fontsize=12,
-        #     ha='center',
-        # )
 
         ax_text.annotate(
             text=label,
-            xy=(x0, y0 - (i_label + 1.25 + (int)(i_label / 5)) * 0.027),
+            xy=(x0, y0 - (i_label + 1.25 + 0.5 * (int)(i_label / 5)) * 0.02),
             xycoords='axes fraction',
-            fontsize=7,
+            fontsize=6,
         )
 
     ax_map.set_axis_off()

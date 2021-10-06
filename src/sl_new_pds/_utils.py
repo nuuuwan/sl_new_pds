@@ -1,5 +1,6 @@
 """Utils."""
 
+import colorsys
 import json
 import logging
 import time
@@ -112,3 +113,23 @@ def log_time(method):
         return result
 
     return timed
+
+
+def to_unkebab(x):
+    x = x.replace('_', '-')
+    return ' '.join(
+        list(
+            map(
+                lambda xi: xi.title(),
+                x.split('-'),
+            )
+        )
+    )
+
+
+def get_fore_color_for_back(back_color):
+    r, g, b = back_color[:3]
+    _, lightness, _ = colorsys.rgb_to_hls(r, g, b)
+    if lightness < 0.7:
+        return 'white'
+    return 'black'

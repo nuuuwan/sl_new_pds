@@ -157,7 +157,7 @@ class Conf:
             label_to_demo[label] = demo
         return label_to_demo
 
-    def get_l2g2d2s(self):
+    def get_g2l2d2s(self):
         label_to_demo = self.get_label_to_demo()
         label_to_seats = self.get_label_to_seats()
 
@@ -166,13 +166,16 @@ class Conf:
             'religious': ['buddhist', 'hindu', 'islam', 'all_christian'],
             'sinhala_buddhist': ['sinhala_buddhist', 'non_sinhala_buddhist'],
         }
-        l2g2d2s = {}
+        g2l2d2s = {}
         for group, groups in groups_map.items():
-            l2g2d2s[group] = {}
-            total_demo_to_seats = {}
+            g2l2d2s[group] = {}
+            total_demo_to_stats = {}
             for label, seats in label_to_seats.items():
+                if label not in g2l2d2s[group]:
+                    g2l2d2s[group][label] = {}
+
                 demo = label_to_demo[label]
-                label_to_pop0 = dict(
+                demo_to_pop = dict(
                     list(
                         map(
                             lambda group: [group, demo[group]],
@@ -180,15 +183,58 @@ class Conf:
                         )
                     )
                 )
-                l2g2d2s[group][label] = _utils.remove_nullish_values(
-                    seat_utils.allocate_seats(seats, label_to_pop0)
+                demo_to_seats = seat_utils.allocate_seats(seats, demo_to_pop)
+                for demo, pop in demo_to_pop.items():
+                    g2l2d2s[group][label][demo] = {
+                        'pop': pop,
+                        'seats': demo_to_seats.get(demo, 0),
+                    }
+
+                for demo, stats in g2l2d2s[group][label].items():
+                    if demo not in total_demo_to_stats:
+                        total_demo_to_stats[demo] = {
+                            'pop': 0,
+                            'seats': 0,
+                        }
+                    total_demo_to_stats[demo]['pop'] += stats['pop']
+                    total_demo_to_stats[demo]['seats'] += stats['seats']
+
+            g2l2d2s[group]['_total'] = total_demo_to_stats
+            total_demo_to_pop = dict(
+                list(
+                    map(
+                        lambda x: (x[0], x[1]['pop']),
+                        total_demo_to_stats.items(),
+                    )
                 )
-                for demo, seats in l2g2d2s[group][label].items():
-                    if demo not in total_demo_to_seats:
-                        total_demo_to_seats[demo] = 0
-                    total_demo_to_seats[demo] += seats
-            l2g2d2s[group]['_total'] = total_demo_to_seats
-        return l2g2d2s
+            )
+            total_seats = sum(
+                list(
+                    map(
+                        lambda x: x['seats'],
+                        total_demo_to_stats.values(),
+                    )
+                )
+            )
+            total_demo_to_seats_pr = seat_utils.allocate_seats(
+                total_seats, total_demo_to_pop
+            )
+            g2l2d2s[group]['_total_prop'] = dict(
+                list(
+                    map(
+                        lambda x: (
+                            x[0],
+                            {
+                                'pop': x[1],
+                                'seats': total_demo_to_seats_pr[x[0]],
+                            },
+                        ),
+                        total_demo_to_pop.items(),
+                    )
+                )
+            )
+
+        return g2l2d2s
 
     def get_unfairness(self):
         label_to_pop = self.get_label_to_pop()
@@ -262,6 +308,7 @@ class Conf:
             self.get_label_to_region_ids(),
             self.get_label_to_seats(),
             self.get_label_to_pop(),
+            self.get_g2l2d2s(),
         )
 
     @log_time
@@ -279,9 +326,13 @@ class Conf:
 
 if __name__ == '__main__':
     ed_ents = ents.get_entities('ed')
-    for ed_ent in ed_ents:
+    i = 13
+    for ed_ent in ed_ents[i: i + 1]:
         ed_id = ed_ent['id']
         map_name = f'{ed_id}-FINAL'
         conf = Conf.read(f'/tmp/sl_new_pds.{map_name}.json')
-        image_file = conf.draw_map(ed_id, map_name)
+        image_file = conf.draw_map(
+            ed_id,
+            map_name,
+        )
         os.system(f'open -a firefox {image_file}')
