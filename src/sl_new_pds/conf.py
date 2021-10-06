@@ -1,5 +1,6 @@
 import json
 import math
+import os
 
 from gig import ents, ext_data
 from utils import dt, jsonx
@@ -274,3 +275,11 @@ class Conf:
             'target pop-per-seat:\t %4.0f', self.get_target_pop_per_seat()
         )
         log.info('-' * 64)
+
+
+if __name__ == '__main__':
+    ed_id = 'EC-01'
+    map_name = f'{ed_id}-FINAL'
+    conf = Conf.read(f'/tmp/sl_new_pds.{map_name}.json')
+    image_file = conf.draw_map(ed_id, map_name)
+    os.system(f'open -a firefox {image_file}')

@@ -70,8 +70,16 @@ def draw_current_and_new(
     label_to_pop,
 ):
     fig, axes = plt.subplots(
-        ncols=2, nrows=2, figsize=(WIDTH_INCH, HEIGHT_INCH), dpi=FIG_DPI
+        ncols=3,
+        nrows=2,
+        figsize=(WIDTH_INCH, HEIGHT_INCH),
+        dpi=FIG_DPI,
+        gridspec_kw={
+            'width_ratios': [4, 4, 1],
+            'height_ratios': [3, 1],
+        },
     )
+    axes[1, 2].set_axis_off()
     plt.tight_layout()
 
     draw_current(axes[0, 0], axes[1, 0], ed_id)
@@ -83,7 +91,7 @@ def draw_current_and_new(
         label_to_seats,
         label_to_pop,
     )
-    mapx.draw_legend(axes[1, 0])
+    mapx.draw_legend(axes[0, 2])
 
     image_file = f'/tmp/sl_new_pds.{map_name}.png'
     plt.savefig(image_file)
