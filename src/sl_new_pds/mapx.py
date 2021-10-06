@@ -152,14 +152,15 @@ def draw_map(
             seats_str = f' ({seats} seats)'
 
         name = row['name']
-        label = '[%d] %s %s %s' % (
-            i_label + 1,
+        i_label_str = '[%d]' % (name[0] + name[-2:]).upper()
+
+        label = '%s %s %s %s' % (
+            i_label_str,
             population_str,
             name,
             seats_str,
         )
 
-        i_label_str = '[%d]' % (i_label + 1)
         ax_map.annotate(
             text=i_label_str,
             xy=(x, y),
