@@ -10,11 +10,11 @@ from sl_new_pds._utils import log
 
 def draw_current_lk():
     fig, axes = plt.subplots(
-        ncols=2,
-        figsize=(WIDTH_INCH / 2, HEIGHT_INCH),
+        ncols=3,
+        figsize=(WIDTH_INCH, HEIGHT_INCH),
         dpi=FIG_DPI,
         gridspec_kw={
-            'width_ratios': [4, 1],
+            'width_ratios': [4, 4, 1],
         },
     )
 
@@ -26,7 +26,9 @@ def draw_current_lk():
     )
 
     draw_current_and_new.draw_current(axes[0], None, ed_ids)
-    mapx.draw_legend(axes[1])
+    draw_current_and_new.draw_current_by_ed(axes[1], None)
+
+    mapx.draw_legend(axes[2])
     fig.text(
         0.5,
         0.97,
@@ -62,6 +64,9 @@ def draw_current_lk():
         fontsize=12,
         ha='center',
     )
+
+    for ax in axes:
+        ax.set_axis_off()
 
     image_file = '/tmp/sl_new_pds.current_lk.png'
     plt.savefig(image_file)

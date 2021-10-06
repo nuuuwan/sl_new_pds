@@ -15,6 +15,7 @@ def draw_tables(ax, g2l2d2s):
     table_height = 1 / n_groups
     table_width = 1
     labels = list(list(g2l2d2s.values())[0].keys())
+    n_labels = len(labels)
     labels + ['_total']
 
     for i_group, [group, l2d2s] in enumerate(g2l2d2s.items()):
@@ -24,6 +25,8 @@ def draw_tables(ax, g2l2d2s):
         cell_text = []
         cell_color = []
         for label in labels:
+            if n_labels > 20 and 'total' not in label:
+                continue
             row_cell_text = []
             row_cell_color = []
             for demo in demos:
@@ -33,7 +36,10 @@ def draw_tables(ax, g2l2d2s):
                 seats_r = pop / IDEAL_POP_PER_SEAT
 
                 text = mapx.to_unkebab(f'{seats} ({seats_r:.2f})')
-                color = mapx.get_seats_color(seats_r, seats)
+                if seats <= 1:
+                    color = mapx.get_seats_color(seats_r, seats)
+                else:
+                    color = mapx.get_seats_color(seats_r / seats, 1)
 
                 row_cell_text.append(text)
                 row_cell_color.append(color)
@@ -54,7 +60,7 @@ def draw_tables(ax, g2l2d2s):
                 row_labels.append('TOTAL')
             elif label == '_total_prop':
                 row_labels.append('Prop.' + ' ' * 6)
-            else:
+            elif n_labels <= 20:
                 row_labels.append(mapx.get_short_name(label))
 
         table = ax.table(
@@ -123,6 +129,43 @@ def draw_current(ax_map, ax_text, ed_ids):
     )
 
 
+def draw_current_by_ed(ax_map, ax_text):
+
+    label_to_region_ids = {}
+    label_to_pop = {}
+    label_to_seats = {}
+
+    pd_ents = ents.get_entities('pd')
+    ed_to_pds = {}
+    for pd_ent in pd_ents:
+        ed_id = pd_ent['ed_id']
+        if ed_id not in ed_to_pds:
+            ed_to_pds[ed_id] = []
+        pd_id = pd_ent['id']
+        ed_to_pds[ed_id].append(pd_id)
+
+    for ed_ent in ents.get_entities('ed'):
+        label = ed_ent['name']
+        ed_id = ed_ent['id']
+        pop = ed_ent['population']
+
+        pd_ids = ed_to_pds[ed_id]
+        label_to_region_ids[label] = [ed_id]
+        label_to_pop[label] = pop / len(pd_ids)
+        label_to_seats[label] = 1
+
+    seats = len(label_to_region_ids.keys())
+    mapx.draw_map(
+        ax_map,
+        ax_text,
+        f'Current ({seats} electorates)',
+        label_to_region_ids=label_to_region_ids,
+        label_to_pop=label_to_pop,
+        label_to_seats=label_to_seats,
+        HEIGHT=HEIGHT,
+    )
+
+
 def draw_new(
     ax_map,
     ax_text,
@@ -150,6 +193,7 @@ def draw_current_and_new(
     label_to_pop,
     g2l2d2s,
 ):
+    n_labels = len(label_to_region_ids.keys())
     ed_index = ents.multiget_entities(ed_ids)
 
     plt.rcParams.update(
@@ -180,14 +224,17 @@ def draw_current_and_new(
     mapx.draw_legend(axes[4])
     draw_tables(axes[5], g2l2d2s)
 
-    title = '•'.join(
-        list(
-            map(
-                lambda e: e['name'],
-                ed_index.values(),
+    if n_labels <= 20:
+        title = '•'.join(
+            list(
+                map(
+                    lambda e: e['name'],
+                    ed_index.values(),
+                )
             )
         )
-    )
+    else:
+        title = 'Sri Lanka'
 
     axes[2].text(
         0,
@@ -212,6 +259,9 @@ def draw_current_and_new(
         ha='center',
         zorder=1000,
     )
+
+    for ax in axes:
+        ax.set_axis_off()
 
     image_file = f'/tmp/sl_new_pds.{map_name}.png'
     plt.savefig(image_file)

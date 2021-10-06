@@ -62,6 +62,7 @@ def draw_map(
     HEIGHT=900,
 ):
     all_gpd_df_list = []
+    n_labels = len(label_to_region_ids)
 
     label_and_region_ids = sorted(
         label_to_region_ids.items(),
@@ -121,9 +122,8 @@ def draw_map(
             xycoords='axes fraction',
             fontsize=12,
         )
-        ax_text.set_axis_off()
 
-    if ax_text:
+    if ax_text and n_labels <= 20:
         for idx, row in all_gpd_df.iterrows():
             [x, y] = [
                 row['geometry'].centroid.x,
@@ -176,8 +176,6 @@ def draw_map(
                 fontsize=6,
             )
 
-    ax_map.set_axis_off()
-
 
 def draw_legend(ax):
     ax.legend(
@@ -194,4 +192,3 @@ def draw_legend(ax):
         loc='center right',
         fontsize=8,
     )
-    ax.set_axis_off()

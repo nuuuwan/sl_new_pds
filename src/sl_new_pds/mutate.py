@@ -277,7 +277,7 @@ def mutate_until_only_simple_member(conf, ed_id):
 
             conf_file = f'/tmp/sl_new_pds.{map_name}.json'
             Conf.write(conf_file, conf)
-            image_file = conf.draw_map(ed_id, map_name)
+            image_file = conf.draw_map([ed_id], map_name)
             os.system(f'open -a firefox {image_file}')
             if is_complete:
                 return is_complete, conf
@@ -294,6 +294,6 @@ def mutate_until_only_simple_member(conf, ed_id):
 
 if __name__ == '__main__':
     district_to_confs = Conf.get_district_to_confs(TOTAL_SEATS_SL)
-    i = 0
-    for ed_id, conf in list(district_to_confs.items())[i: i + 1]:
+    # i = 0
+    for ed_id, conf in list(district_to_confs.items()):
         mutate_until_only_simple_member(conf, ed_id)
