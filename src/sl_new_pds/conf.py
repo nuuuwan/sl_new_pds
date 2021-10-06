@@ -278,8 +278,9 @@ class Conf:
 
 
 if __name__ == '__main__':
-    ed_id = 'EC-01'
-    map_name = f'{ed_id}-FINAL'
-    conf = Conf.read(f'/tmp/sl_new_pds.{map_name}.json')
-    image_file = conf.draw_map(ed_id, map_name)
-    os.system(f'open -a firefox {image_file}')
+    for ed_id in ['EC-22', 'EC-01', 'EC-09', 'EC-16']:
+        map_name = f'{ed_id}-FINAL'
+        conf = Conf.read(f'/tmp/sl_new_pds.{map_name}.json')
+        image_file = conf.draw_map(ed_id, map_name)
+        os.system(f'open -a firefox {image_file}')
+        break

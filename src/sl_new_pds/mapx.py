@@ -80,6 +80,7 @@ def draw_map(
     label_to_region_ids,
     label_to_seats=None,
     label_to_pop=None,
+    HEIGHT=900,
 ):
     all_gpd_df_list = []
 
@@ -123,7 +124,7 @@ def draw_map(
     all_gpd_df.plot(
         ax=ax_map,
         color=all_gpd_df['color'],
-        edgecolor='gray',
+        edgecolor='black',
         linewidth=1,
     )
 
@@ -185,17 +186,18 @@ def draw_map(
         #     ha='center',
         # )
 
+        x0, y0 = 0.2, 1 - 0.2
         ax_text.annotate(
-            text=label,
-            xy=(100, 170 - i_label * 10),
-            xycoords='axes points',
-            fontsize=8,
+            text=title.title(),
+            xy=(x0, y0),
+            xycoords='axes fraction',
+            fontsize=12,
         )
         ax_text.annotate(
-            text=title,
-            xy=(100, 190),
-            xycoords='axes points',
-            fontsize=12,
+            text=label,
+            xy=(x0, y0 - (i_label + 1) * 0.02),
+            xycoords='axes fraction',
+            fontsize=6,
         )
 
     ax_map.set_axis_off()
@@ -213,6 +215,6 @@ def draw_legend(ax):
             )
         ),
         loc='center right',
-        fontsize=9,
+        fontsize=8,
     )
     ax.set_axis_off()
