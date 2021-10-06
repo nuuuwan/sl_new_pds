@@ -12,62 +12,17 @@ from sl_new_pds._utils import get_fore_color_for_back, log_time, to_unkebab
 
 EDGE_COLOR = 'gray'
 EDGE_WIDTH = 1
-ALPHA = 0.75
-
-
-def format_value(x):
-    if x is None:
-        return ''
-    return f'{x:+.1f} seats'
-
-
-def get_legend_item_list():
-    p_lower_bounds = [1, 0.5, 0.2, -0.2, -0.5, -1, None]
-    legend_item_list = []
-    p_upper_bound = None
-    i_middle = (int)(len(p_lower_bounds) / 2)
-    for i in range(0, len(p_lower_bounds)):
-        p_lower_bound = p_lower_bounds[i]
-
-        if p_lower_bound and p_lower_bound > 0:
-            h = 0
-            lightness = [0.55, 0.75, 0.95][i]
-        else:
-            h = 2.0 / 3
-            lightness = [0.75, 0.95, 0.75, 0.55][i - i_middle]
-
-        if i == i_middle:
-            s = 0
-        else:
-            s = 1
-
-        label = (
-            format_value(p_lower_bound) + ' < ' + format_value(p_upper_bound)
-        )
-
-        legend_item_list.append(
-            {
-                'p_lower_bound': p_lower_bound,
-                'p_upper_bound': p_upper_bound,
-                'label': label,
-                'color': colorsys.hls_to_rgb(h, lightness, s),
-            }
-        )
-        p_upper_bound = p_lower_bound
-    return legend_item_list
-
-
-LEGEND_ITEM_LIST = get_legend_item_list()
+ALPHA = 1.0
 
 
 def get_seats_color(seats_by_pop, seats_actual):
-    diff = seats_by_pop - seats_actual
-
-    for legend_item in LEGEND_ITEM_LIST:
-        p_lower_bound = legend_item['p_lower_bound']
-        if p_lower_bound is None or diff > p_lower_bound:
-            return legend_item['color']
-    return 'green'
+    diff = seats_actual - seats_by_pop
+    diff = max(min(diff, 1), -1)
+    h = (1.0 / 2) if (diff > 0) else (0)
+    s = 1.0
+    MAX_DIFF_LIGHT = 0.4
+    light = 1 - abs(diff) * (1 - MAX_DIFF_LIGHT)
+    return colorsys.hls_to_rgb(h, light, s)
 
 
 def get_short_name(name):
@@ -219,12 +174,12 @@ def draw_legend(ax):
     ax.legend(
         handles=list(
             map(
-                lambda legend_item: mpatches.Patch(
-                    color=legend_item['color'],
-                    label=legend_item['label'],
+                lambda diff: mpatches.Patch(
+                    color=get_seats_color(1 - diff, 1),
+                    label=f'{diff:+.1f} seats',
                     alpha=ALPHA,
                 ),
-                LEGEND_ITEM_LIST,
+                [1, 0.5, 0.2, -0.2, -0.5, -1],
             )
         ),
         loc='center right',

@@ -326,7 +326,7 @@ class Conf:
 
 if __name__ == '__main__':
     ed_ents = ents.get_entities('ed')
-    i = 13
+    i = 12
     for ed_ent in ed_ents[i: i + 1]:
         ed_id = ed_ent['id']
         map_name = f'{ed_id}-FINAL'
