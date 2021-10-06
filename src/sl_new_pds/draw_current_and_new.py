@@ -38,7 +38,7 @@ def draw_current(ax_map, ax_text, ed_id):
     mapx.draw_map(
         ax_map,
         ax_text,
-        'CURRENT',
+        'Current',
         label_to_region_ids=label_to_region_ids,
         label_to_pop=label_to_pop,
         label_to_seats=label_to_seats,
@@ -56,7 +56,7 @@ def draw_new(
     mapx.draw_map(
         ax_map,
         ax_text,
-        'NEW',
+        'New (Proposed)',
         label_to_region_ids,
         label_to_seats,
         label_to_pop,

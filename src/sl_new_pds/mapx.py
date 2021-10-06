@@ -10,6 +10,10 @@ from shapely.geometry import JOIN_STYLE
 from sl_new_pds._constants import IDEAL_POP_PER_SEAT
 from sl_new_pds._utils import log_time
 
+EDGE_COLOR = 'gray'
+EDGE_WIDTH = 1
+ALPHA = 0.75
+
 
 def format_value(x):
     if x is None:
@@ -72,6 +76,10 @@ def get_pop_color(pop):
     return 'white'
 
 
+def get_short_name(name):
+    return (name[0] + name[-2:]).upper()
+
+
 @log_time
 def draw_map(
     ax_map,
@@ -86,7 +94,7 @@ def draw_map(
 
     label_and_region_ids = sorted(
         label_to_region_ids.items(),
-        key=lambda x: -label_to_pop[x[0]],
+        key=lambda x: get_short_name(x[0]),
     )
 
     for i_label, [label, region_ids] in enumerate(label_and_region_ids):
@@ -124,8 +132,9 @@ def draw_map(
     all_gpd_df.plot(
         ax=ax_map,
         color=all_gpd_df['color'],
-        edgecolor='black',
-        linewidth=1,
+        edgecolor=EDGE_COLOR,
+        linewidth=EDGE_WIDTH,
+        alpha=ALPHA,
     )
 
     for idx, row in all_gpd_df.iterrows():
@@ -152,7 +161,7 @@ def draw_map(
             seats_str = f' ({seats} seats)'
 
         name = row['name']
-        i_label_str = '[%d]' % (name[0] + name[-2:]).upper()
+        i_label_str = '[%s]' % get_short_name(name)
 
         label = '%s %s %s %s' % (
             i_label_str,
@@ -164,7 +173,7 @@ def draw_map(
         ax_map.annotate(
             text=i_label_str,
             xy=(x, y),
-            fontsize=6,
+            fontsize=12,
             ha='center',
         )
 
@@ -198,7 +207,7 @@ def draw_map(
             text=label,
             xy=(x0, y0 - (i_label + 1) * 0.02),
             xycoords='axes fraction',
-            fontsize=6,
+            fontsize=9,
         )
 
     ax_map.set_axis_off()
@@ -210,7 +219,9 @@ def draw_legend(ax):
         handles=list(
             map(
                 lambda legend_item: mpatches.Patch(
-                    color=legend_item['color'], label=legend_item['label']
+                    color=legend_item['color'],
+                    label=legend_item['label'],
+                    alpha=ALPHA,
                 ),
                 LEGEND_ITEM_LIST,
             )
