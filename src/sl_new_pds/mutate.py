@@ -8,6 +8,8 @@ from sl_new_pds._constants import PARENT_TO_CHILD_TYPE, TOTAL_SEATS_SL
 from sl_new_pds._utils import log, log_time
 from sl_new_pds.conf import Conf
 
+MAX_MEMBER_SEATS = 1
+
 
 @log_time
 def expand_region(conf, expand_label):
@@ -99,7 +101,7 @@ def split_region_tentative(conf, split_label):
     lat_span, lng_span = max_lat - min_lat, max_lng - min_lng
 
     search_meta_list = []
-    LAT_LNG_SKEW = 1.6
+    LAT_LNG_SKEW = 1.4
     if LAT_LNG_SKEW * lng_span > lat_span:
         low_prefix = 'W'
         high_prefix = 'E'
@@ -265,10 +267,9 @@ def mutate_until_only_simple_member(conf, ed_id):
 
         @log_time
         def inner(conf=conf, is_complete=is_complete):
-            single_member_count = conf.get_single_member_count()
-            single_member_count / conf.__total_seats__
+            biggest_member_seats = conf.get_biggest_member_seats()
 
-            if single_member_count == conf.__total_seats__:
+            if biggest_member_seats == MAX_MEMBER_SEATS:
                 map_name = f'{ed_id}-FINAL'
                 is_complete = True
             else:

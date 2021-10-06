@@ -275,6 +275,14 @@ class Conf:
             )
         )
 
+    def get_biggest_member_seats(self):
+        label_to_seats = self.get_label_to_seats()
+        return max(
+            list(
+                label_to_seats.values(),
+            )
+        )
+
     def get_zero_member_count(self):
         label_to_seats = self.get_label_to_seats()
         return len(
@@ -301,9 +309,9 @@ class Conf:
     def copy(self):
         return Conf(_utils.dumb_copy(self.__label_to_region_ids__))
 
-    def draw_map(self, ed_id, map_name):
+    def draw_map(self, ed_ids, map_name):
         return draw_current_and_new(
-            ed_id,
+            ed_ids,
             map_name,
             self.get_label_to_region_ids(),
             self.get_label_to_seats(),
@@ -326,13 +334,13 @@ class Conf:
 
 if __name__ == '__main__':
     ed_ents = ents.get_entities('ed')
-    i = 3
-    for ed_ent in ed_ents[i: i + 3]:
+    i = 15
+    for ed_ent in ed_ents[i: i + 2]:
         ed_id = ed_ent['id']
         map_name = f'{ed_id}-FINAL'
         conf = Conf.read(f'/tmp/sl_new_pds.{map_name}.json')
         image_file = conf.draw_map(
-            ed_id,
+            [ed_id],
             map_name,
         )
         os.system(f'open -a firefox {image_file}')

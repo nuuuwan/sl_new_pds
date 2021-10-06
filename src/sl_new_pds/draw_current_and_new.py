@@ -1,18 +1,11 @@
 import matplotlib.pyplot as plt
 from gig import ents
 from matplotlib.font_manager import FontProperties
-from utils import dt
 
 from sl_new_pds import mapx
-from sl_new_pds._constants import IDEAL_POP_PER_SEAT
+from sl_new_pds._constants import (FIG_DPI, FOOTER_TEXT, HEIGHT, HEIGHT_INCH,
+                                   IDEAL_POP_PER_SEAT, WIDTH_INCH)
 from sl_new_pds._utils import get_fore_color_for_back, log
-
-WIDTH = 2400
-HEIGHT = 9 * WIDTH / 16
-
-FIG_DPI = 150
-WIDTH_INCH = WIDTH / FIG_DPI
-HEIGHT_INCH = HEIGHT / FIG_DPI
 
 
 def draw_tables(ax, g2l2d2s):
@@ -60,7 +53,7 @@ def draw_tables(ax, g2l2d2s):
             if label == '_total':
                 row_labels.append('TOTAL')
             elif label == '_total_prop':
-                row_labels.append('Prop.    ')
+                row_labels.append('Prop.' + ' ' * 6)
             else:
                 row_labels.append(mapx.get_short_name(label))
 
@@ -99,17 +92,14 @@ def draw_tables(ax, g2l2d2s):
     ax.set_axis_off()
 
 
-def draw_current(ax_map, ax_text, ed_id):
-
-    ed_ent = ents.get_entity(ed_id)
-    dt.to_kebab(ed_id + ' ' + ed_ent['name'])
+def draw_current(ax_map, ax_text, ed_ids):
 
     label_to_region_ids = {}
     label_to_pop = {}
     label_to_seats = {}
 
     for pd_ent in ents.get_entities('pd'):
-        if pd_ent['ed_id'] != ed_id:
+        if pd_ent['ed_id'] not in ed_ids:
             continue
         label = pd_ent['name']
         pop = pd_ent['population']
@@ -121,10 +111,11 @@ def draw_current(ax_map, ax_text, ed_id):
         label_to_pop[label] = pop
         label_to_seats[label] = 1
 
+    seats = len(label_to_region_ids.keys())
     mapx.draw_map(
         ax_map,
         ax_text,
-        'Current',
+        f'Current ({seats} electorates)',
         label_to_region_ids=label_to_region_ids,
         label_to_pop=label_to_pop,
         label_to_seats=label_to_seats,
@@ -139,10 +130,11 @@ def draw_new(
     label_to_seats,
     label_to_pop,
 ):
+    seats = len(label_to_pop.keys())
     mapx.draw_map(
         ax_map,
         ax_text,
-        'New (Proposed)',
+        f'New ({seats} electorates)',
         label_to_region_ids,
         label_to_seats,
         label_to_pop,
@@ -151,15 +143,20 @@ def draw_new(
 
 
 def draw_current_and_new(
-    ed_id,
+    ed_ids,
     map_name,
     label_to_region_ids,
     label_to_seats,
     label_to_pop,
     g2l2d2s,
 ):
-    ed_ent = ents.get_entity(ed_id)
-    ed_name = ed_ent['name']
+    ed_index = ents.multiget_entities(ed_ids)
+
+    plt.rcParams.update(
+        {
+            'font.family': 'Futura',
+        }
+    )
 
     fig, axes = plt.subplots(
         ncols=6,
@@ -171,7 +168,7 @@ def draw_current_and_new(
     )
     plt.tight_layout()
 
-    draw_current(axes[1], axes[0], ed_id)
+    draw_current(axes[1], axes[0], ed_ids)
 
     draw_new(
         axes[3],
@@ -183,10 +180,19 @@ def draw_current_and_new(
     mapx.draw_legend(axes[4])
     draw_tables(axes[5], g2l2d2s)
 
+    title = '•'.join(
+        list(
+            map(
+                lambda e: e['name'],
+                ed_index.values(),
+            )
+        )
+    )
+
     axes[2].text(
         0,
         0.97,
-        f'{ed_name} Electoral District ({ed_id})',
+        title,
         fontsize=12,
         ha='center',
     )
@@ -194,15 +200,17 @@ def draw_current_and_new(
         0,
         0.92,
         'Current and New (Proposed) Electorates',
+        zorder=1000,
         fontsize=24,
         ha='center',
     )
     axes[2].text(
         0,
         0.05,
-        'Data from elections.gov.lk • Visualizations & Analysis by @nuuuwan',
+        FOOTER_TEXT,
         fontsize=8,
         ha='center',
+        zorder=1000,
     )
 
     image_file = f'/tmp/sl_new_pds.{map_name}.png'

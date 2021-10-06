@@ -36,11 +36,11 @@ def get_short_name(name):
 
     new_words = []
     if n_words == 1:
-        new_words += [words[0][:5]]
+        new_words += [words[0][:3]]
     elif n_words == 2:
         new_words += [
-            words[0][:3],
-            words[1][:1],
+            words[0][:2],
+            words[-1][:1],
         ]
     else:
         new_words += [
@@ -48,7 +48,7 @@ def get_short_name(name):
             words[-2][:1],
             words[-1][:1],
         ]
-    return '-'.join(new_words)
+    return ''.join(new_words)
 
 
 @log_time
@@ -110,67 +110,73 @@ def draw_map(
         edgecolor=EDGE_COLOR,
         linewidth=EDGE_WIDTH,
         alpha=ALPHA,
+        zorder=1,
     )
 
     x0, y0 = 0.05, 1 - 0.2
-    ax_text.annotate(
-        text=title.title(),
-        xy=(x0, y0),
-        xycoords='axes fraction',
-        fontsize=12,
-    )
-
-    for idx, row in all_gpd_df.iterrows():
-        [x, y] = [
-            row['geometry'].centroid.x,
-            row['geometry'].centroid.y,
-        ]
-
-        i_label = row['i_label']
-
-        population = row['population']
-        if population > 1_000_000:
-            population_m = population / 1_000_000
-            population_str = f'{population_m:.3g}M'
-        elif population > 1_000:
-            population_k = population / 1_000
-            population_str = f'{population_k:.3g}K'
-        else:
-            population_str = f'{population}'
-
-        seats = row['seats']
-        seats_str = ''
-        if seats > 1:
-            seats_str = f' ({seats} seats)'
-
-        name = row['name']
-        short_name = get_short_name(name)
-
-        label = '[%s] %s %s %s' % (
-            short_name,
-            population_str,
-            to_unkebab(name),
-            seats_str,
-        )
-
-        seats_r = population / IDEAL_POP_PER_SEAT
-        ax_map.annotate(
-            text=short_name,
-            xy=(x, y),
-            fontsize=5,
-            ha='center',
-            color=get_fore_color_for_back(get_seats_color(seats_r, seats)),
-        )
-
+    if ax_text:
         ax_text.annotate(
-            text=label,
-            xy=(x0, y0 - (i_label + 1.25 + 0.5 * (int)(i_label / 5)) * 0.02),
+            text=title.title(),
+            xy=(x0, y0),
             xycoords='axes fraction',
-            fontsize=6,
+            fontsize=12,
         )
+        ax_text.set_axis_off()
+
+    if ax_text:
+        for idx, row in all_gpd_df.iterrows():
+            [x, y] = [
+                row['geometry'].centroid.x,
+                row['geometry'].centroid.y,
+            ]
+
+            i_label = row['i_label']
+
+            population = row['population']
+            if population > 1_000_000:
+                population_m = population / 1_000_000
+                population_str = f'{population_m:.3g}M'
+            elif population > 1_000:
+                population_k = population / 1_000
+                population_str = f'{population_k:.3g}K'
+            else:
+                population_str = f'{population}'
+
+            seats = row['seats']
+            seats_str = ''
+            if seats > 1:
+                seats_str = f' ({seats} seats)'
+
+            name = row['name']
+            short_name = get_short_name(name)
+
+            label = '[%s] %s %s %s' % (
+                short_name,
+                population_str,
+                to_unkebab(name),
+                seats_str,
+            )
+
+            seats_r = population / IDEAL_POP_PER_SEAT
+            ax_map.annotate(
+                text=short_name,
+                xy=(x, y),
+                fontsize=10,
+                ha='center',
+                color=get_fore_color_for_back(get_seats_color(seats_r, seats)),
+            )
+
+            ax_text.annotate(
+                text=label,
+                xy=(
+                    x0,
+                    y0 - (i_label + 1.25 + 0.5 * (int)(i_label / 5)) * 0.02,
+                ),
+                xycoords='axes fraction',
+                fontsize=6,
+            )
 
     ax_map.set_axis_off()
-    ax_text.set_axis_off()
 
 
 def draw_legend(ax):
