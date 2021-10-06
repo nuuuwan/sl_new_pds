@@ -213,6 +213,6 @@ def draw_legend(ax):
             )
         ),
         loc='center right',
-        fontsize=12,
+        fontsize=9,
     )
     ax.set_axis_off()
