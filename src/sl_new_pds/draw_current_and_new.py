@@ -36,10 +36,7 @@ def draw_tables(ax, g2l2d2s):
                 seats_r = pop / IDEAL_POP_PER_SEAT
 
                 text = mapx.to_unkebab(f'{seats} ({seats_r:.2f})')
-                if seats <= 1:
-                    color = mapx.get_seats_color(seats_r, seats)
-                else:
-                    color = mapx.get_seats_color(seats_r / seats, 1)
+                color = mapx.get_seats_color(seats_r, seats)
 
                 row_cell_text.append(text)
                 row_cell_color.append(color)
@@ -121,7 +118,7 @@ def draw_current(ax_map, ax_text, ed_ids):
     mapx.draw_map(
         ax_map,
         ax_text,
-        f'Current ({seats} electorates)',
+        f'Current ({seats} Polling Divisions)',
         label_to_region_ids=label_to_region_ids,
         label_to_pop=label_to_pop,
         label_to_seats=label_to_seats,
@@ -158,7 +155,7 @@ def draw_current_by_ed(ax_map, ax_text):
     mapx.draw_map(
         ax_map,
         ax_text,
-        f'Current ({seats} electorates)',
+        f'Current ({seats} Polling Divisions)',
         label_to_region_ids=label_to_region_ids,
         label_to_pop=label_to_pop,
         label_to_seats=label_to_seats,
@@ -177,7 +174,7 @@ def draw_new(
     mapx.draw_map(
         ax_map,
         ax_text,
-        f'New ({seats} electorates)',
+        f'New ({seats} Polling Divisions)',
         label_to_region_ids,
         label_to_seats,
         label_to_pop,
@@ -207,7 +204,7 @@ def draw_current_and_new(
         figsize=(WIDTH_INCH, HEIGHT_INCH),
         dpi=FIG_DPI,
         gridspec_kw={
-            'width_ratios': [1, 6, 1, 6, 1, 6],
+            'width_ratios': [1, 10, 1, 10, 1, 10],
         },
     )
     plt.tight_layout()
@@ -246,7 +243,7 @@ def draw_current_and_new(
     axes[2].text(
         0,
         0.92,
-        'Current and New (Proposed) Electorates',
+        'Current and New (Proposed) Polling Divisions',
         zorder=1000,
         fontsize=24,
         ha='center',

@@ -39,7 +39,7 @@ def draw_current_lk():
     fig.text(
         0.5,
         0.92,
-        'Current (160 Electorates)',
+        'Current (160 Polling Divisions)',
         fontsize=24,
         ha='center',
     )

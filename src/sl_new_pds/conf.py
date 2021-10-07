@@ -206,8 +206,7 @@ class Conf:
 
 if __name__ == '__main__':
     ed_ents = ents.get_entities('ed')
-    i = 15
-    for ed_ent in ed_ents[i: i + 2]:
+    for ed_ent in ed_ents:
         ed_id = ed_ent['id']
         map_name = f'{ed_id}-FINAL'
         conf = Conf.read(f'/tmp/sl_new_pds.{map_name}.json')

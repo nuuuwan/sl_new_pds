@@ -23,7 +23,7 @@ def get_seats_color(seats_by_pop, seats_actual):
     h = (COLOR_POSITIVE) if (diff > 0) else (COLOR_NEGATIVE)
     s = 1.0
     MAX_DIFF_LIGHT = 0.4
-    q_light = abs(diff) ** 2
+    q_light = abs(diff) ** 3
     light = 1 - q_light * (1 - MAX_DIFF_LIGHT)
     return colorsys.hls_to_rgb(h, light, s)
 
@@ -91,14 +91,13 @@ def draw_map(
 
         pop = label_to_pop.get(label)
         gpd_df['population'] = pop
+        seats_r = pop / IDEAL_POP_PER_SEAT
+        gpd_df['seats_r'] = seats_r
 
         gpd_df['population_per_seat'] = gpd_df['population'] / gpd_df['seats']
-        gpd_df['seats_r'] = gpd_df['population'] / gpd_df['seats']
 
-        gpd_df['color'] = gpd_df['population'].map(
-            lambda population: get_seats_color(
-                population / IDEAL_POP_PER_SEAT, seats
-            )
+        gpd_df['color'] = gpd_df['seats_r'].map(
+            lambda seats_r: get_seats_color(seats_r, seats)
         )
 
         all_gpd_df_list.append(gpd_df)
@@ -186,7 +185,7 @@ def draw_legend(ax):
                     label=f'{diff:+.1f} seats',
                     alpha=ALPHA,
                 ),
-                [1, 0.5, 0.2, -0.2, -0.5, -1],
+                [1, 0.5, -0.5, -1],
             )
         ),
         loc='center right',

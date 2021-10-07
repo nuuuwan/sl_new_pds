@@ -5,7 +5,7 @@ from gig import ents
 from sl_new_pds.conf import Conf
 
 
-def draw_new_lk():
+def get_lk_conf():
     ed_ents = ents.get_entities('ed')
     confs = []
     ed_ids = []
@@ -23,13 +23,17 @@ def draw_new_lk():
             label_to_region_ids[label] = region_ids
         total_seats += conf.get_total_seats()
 
-    lk_conf = Conf(
-        total_seats=total_seats, label_to_region_ids=label_to_region_ids
+    return (
+        Conf(total_seats=total_seats, label_to_region_ids=label_to_region_ids),
+        ed_ids,
     )
 
+
+def draw_new_lk():
+    lk_conf, ed_ids = get_lk_conf()
     image_file = lk_conf.draw_map(
         ed_ids,
-        map_name,
+        'new_lk',
     )
     os.system(f'open -a firefox {image_file}')
     return image_file

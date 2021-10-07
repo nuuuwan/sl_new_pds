@@ -52,19 +52,35 @@ def split_region_tentative(conf, split_label):
     split_label_pop = label_to_pop[split_label]
     split_label_seats_r = total_seats * split_label_pop / total_pop
 
+    SEAT_LIMIT = 0.75
+    HACK_OFFSET = 0
+    MAX_ASYM = 1.5
+    LAT_LNG_SKEW = 1.4
+
+    if split_label == 'ed-colombo':
+        HACK_OFFSET = 0.5
+    elif split_label == 'kothmale-hanguranketha-walapane':
+        SEAT_LIMIT = 0.9
+    elif split_label == 'ed-matara':
+        HACK_OFFSET = 1
+        SEAT_LIMIT = 0.9
+    elif split_label == 'ed-hambantota':
+        HACK_OFFSET = 0.5
+        SEAT_LIMIT = 0.9
+    elif split_label == 'ed-puttalam':
+        HACK_OFFSET = 1
+    elif split_label == 'anamaduwa-puttalam':
+        SEAT_LIMIT = 0.9
+        LAT_LNG_SKEW = 4
+    elif split_label == 'ed-badulla':
+        HACK_OFFSET = 1
+    elif split_label == 'ed-kegalle':
+        HACK_OFFSET = 2
+
     if split_label_seats_r < 2:
         split_label_seats_round = split_label_seats_r * 0.5
     else:
         split_label_seats_round = round(split_label_seats_r, 0)
-        HACK_OFFSET = 0
-        if split_label == 'ed-kegalle':
-            HACK_OFFSET = 2
-        if split_label == 'ed-badulla':
-            HACK_OFFSET = 1
-        if split_label == 'ed-matara':
-            HACK_OFFSET = 1
-        if split_label == 'ed-colombo':
-            HACK_OFFSET = 2
 
         split_label_seats_round = (
             math.ceil(split_label_seats_round * 0.5) + HACK_OFFSET
@@ -101,7 +117,7 @@ def split_region_tentative(conf, split_label):
     lat_span, lng_span = max_lat - min_lat, max_lng - min_lng
 
     search_meta_list = []
-    LAT_LNG_SKEW = 1.4
+
     if LAT_LNG_SKEW * lng_span > lat_span:
         low_prefix = 'W'
         high_prefix = 'E'
@@ -186,7 +202,6 @@ def split_region_tentative(conf, split_label):
         (split_label_pop - max_split_cum_pop) * total_seats / total_pop
     )
 
-    SEAT_LIMIT = 0.76
     min_cum_pop_seats_r = min(split_cum_pop_seats_r, rev_split_cum_pop_seats_r)
     max_cum_pop_seats_r = max(split_cum_pop_seats_r, rev_split_cum_pop_seats_r)
     if min_cum_pop_seats_r > 0:
@@ -194,7 +209,7 @@ def split_region_tentative(conf, split_label):
     else:
         asym = 0
 
-    MAX_ASYM = 1.5
+    print(split_label, min_cum_pop_seats_r, SEAT_LIMIT, asym, MAX_ASYM)
     if min_cum_pop_seats_r < SEAT_LIMIT and asym > MAX_ASYM:
         first_region_id = region_ids[0]
         first_region_id_type = ent_types.get_entity_type(first_region_id)
@@ -294,6 +309,6 @@ def mutate_until_only_simple_member(conf, ed_id):
 
 if __name__ == '__main__':
     district_to_confs = Conf.get_district_to_confs(TOTAL_SEATS_SL)
-    # i = 0
-    for ed_id, conf in list(district_to_confs.items()):
+    i = 0
+    for ed_id, conf in list(district_to_confs.items())[i: i + 1]:
         mutate_until_only_simple_member(conf, ed_id)
