@@ -189,6 +189,7 @@ def draw_current_and_new(
     label_to_seats,
     label_to_pop,
     g2l2d2s,
+    do_draw_tables=False,
 ):
     n_labels = len(label_to_region_ids.keys())
     ed_index = ents.multiget_entities(ed_ids)
@@ -199,12 +200,19 @@ def draw_current_and_new(
         }
     )
 
+    width_ratios = [1, 10, 1, 10, 1]
+    ncols = 5
+    if do_draw_tables:
+        width_ratios.append(10)
+        ncols += 1
+
+
     fig, axes = plt.subplots(
-        ncols=6,
+        ncols=ncols,
         figsize=(WIDTH_INCH, HEIGHT_INCH),
         dpi=FIG_DPI,
         gridspec_kw={
-            'width_ratios': [1, 10, 1, 10, 1, 10],
+            'width_ratios': width_ratios,
         },
     )
     plt.tight_layout()
@@ -219,7 +227,8 @@ def draw_current_and_new(
         label_to_pop,
     )
     mapx.draw_legend(axes[4])
-    draw_tables(axes[5], g2l2d2s)
+    if do_draw_tables:
+        draw_tables(axes[5], g2l2d2s)
 
     if n_labels <= 20:
         title = '•'.join(
