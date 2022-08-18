@@ -1,6 +1,5 @@
 import json
 import math
-import os
 
 from gig import ents
 from utils import dt, jsonx
@@ -8,7 +7,7 @@ from utils import dt, jsonx
 from sl_new_pds import _utils, conf_helpers, seat_utils
 from sl_new_pds._constants import START_TYPE
 from sl_new_pds._utils import log, log_time
-from sl_new_pds.draw_current_and_new import draw_current_and_new
+from sl_new_pds.draw_current_and_new import draw_current_and_new_split
 
 
 class Conf:
@@ -182,7 +181,7 @@ class Conf:
         g2l2d2s = self.get_g2l2d2s(label_to_seats=label_to_seats)
         log.info('Computed g2l2d2s')
 
-        return draw_current_and_new(
+        return draw_current_and_new_split(
             ed_ids,
             map_name,
             self.get_label_to_region_ids(),
@@ -210,8 +209,9 @@ if __name__ == '__main__':
         ed_id = ed_ent['id']
         map_name = f'{ed_id}-FINAL'
         conf = Conf.read(f'/tmp/sl_new_pds.{map_name}.json')
-        image_file = conf.draw_map(
+        image_files = conf.draw_map(
             [ed_id],
             map_name,
         )
-        os.system(f'open -a firefox {image_file}')
+        # for image_file in image_files:
+        #     os.system(f'open -a firefox {image_file}')

@@ -37,3 +37,6 @@ HEIGHT_INCH = HEIGHT / FIG_DPI
 FOOTER_TEXT = (
     'Data from elections.gov.lk • Visualizations & Analysis by @nuuuwan'
 )
+
+
+DIR_REACT = '/Users/nuwan.senaratna/Not.Dropbox/_CODING/js_react/lk_regions/public/data/custom_maps'

@@ -3,6 +3,7 @@ import os
 from gig import ents
 
 from sl_new_pds.conf import Conf
+from sl_new_pds._constants import DIR_REACT
 
 
 def get_lk_conf():
@@ -23,10 +24,11 @@ def get_lk_conf():
             label_to_region_ids[label] = region_ids
         total_seats += conf.get_total_seats()
 
-    return (
-        Conf(total_seats=total_seats, label_to_region_ids=label_to_region_ids),
-        ed_ids,
+    lk_conf = Conf(
+        total_seats=total_seats, label_to_region_ids=label_to_region_ids
     )
+    Conf.write(f'{DIR_REACT}/sl_new_pds.lk-FINAL.json', lk_conf)
+    return lk_conf, ed_ids
 
 
 def draw_new_lk():
@@ -40,4 +42,4 @@ def draw_new_lk():
 
 
 if __name__ == '__main__':
-    draw_new_lk()
+    get_lk_conf()

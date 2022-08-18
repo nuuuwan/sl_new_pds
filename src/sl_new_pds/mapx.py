@@ -113,13 +113,14 @@ def draw_map(
         zorder=1,
     )
 
-    x0, y0 = 0.05, 1 - 0.2
+    x0, y0 = 0, 1 - 0.2
     if ax_text:
         ax_text.annotate(
             text=title.title(),
             xy=(x0, y0),
             xycoords='axes fraction',
             fontsize=12,
+            fontweight="bold",
         )
 
     if ax_text and n_labels <= 20:
@@ -168,11 +169,11 @@ def draw_map(
             ax_text.annotate(
                 text=label,
                 xy=(
-                    x0,
-                    y0 - (i_label + 1.25 + 0.5 * (int)(i_label / 5)) * 0.02,
+                    0,
+                    y0 - (i_label + 1.25 + 0.5 * (int)(i_label / 5)) * 0.03,
                 ),
                 xycoords='axes fraction',
-                fontsize=6,
+                fontsize=12,
             )
 
 
@@ -189,5 +190,5 @@ def draw_legend(ax):
             )
         ),
         loc='center right',
-        fontsize=8,
+        fontsize=16,
     )
